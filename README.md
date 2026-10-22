@@ -4,7 +4,7 @@ A self-hosted deal hunter that watches flight prices departing from **Bilbao (BI
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
 
-> **Status:** 🚧 Phase 0 — project structure. See the [roadmap](docs/roadmap.md).
+> **Status:** 🚧 Phase 0 — setup in progress: repository ✅ · dev tools ✅ · Telegram bot ✅ · cloud and price API accounts ⏳. See the [roadmap](docs/roadmap.md).
 
 ---
 
@@ -47,7 +47,7 @@ flowchart TD
     CORE --> TG["Telegram bot<br/>group per category · topic per instance"]
 ```
 
-More detail in [docs/architecture.md](docs/architecture.md). Telegram setup: [docs/telegram-setup.md](docs/telegram-setup.md).
+More detail in [docs/architecture.md](docs/architecture.md).
 
 ## Tech stack
 
@@ -64,6 +64,14 @@ More detail in [docs/architecture.md](docs/architecture.md). Telegram setup: [do
 
 Everything runs on free tiers.
 
+## Getting started
+
+1. Install the tools: [docs/development-setup.md](docs/development-setup.md)
+2. Set up Telegram: [docs/telegram-setup.md](docs/telegram-setup.md)
+3. Copy `.env.example` to `.env` and fill in the values
+
+The watchers themselves arrive in Phase 1.
+
 ## Repository layout
 
 ```
@@ -73,7 +81,7 @@ Everything runs on free tiers.
 ├── watchers/flights/  # Flights watcher (fetches fares from the price API)
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
-├── docs/              # Architecture, roadmap and Telegram setup
+├── docs/              # Architecture, roadmap, development and Telegram setup
 └── .github/           # Pull request template (CI workflows later)
 ```
 

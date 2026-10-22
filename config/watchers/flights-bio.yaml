@@ -38,7 +38,7 @@ alerts:
 telegram:
   # Where alerts are posted. IDs are deployment-specific, so they are read from
   # environment variables (see .env.example) instead of being stored here.
-  group: flights                                 # Telegram group "Flights"
-  topic: bilbao                                  # topic "Bilbao" inside that group
+  group: flights                                 # group for flight deals
+  topic: bilbao                                  # topic for departures from Bilbao
   chat_id_env: TELEGRAM_FLIGHTS_CHAT_ID          # env var holding the group chat ID
   topic_id_env: TELEGRAM_FLIGHTS_BIO_TOPIC_ID    # env var holding the topic (thread) ID
