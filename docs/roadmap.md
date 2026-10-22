@@ -2,14 +2,23 @@
 
 ## Version 1 — flights from Bilbao
 
-| Phase | Goal | Done when |
-|---|---|---|
-| 0. Setup | Tools installed (WSL), Oracle Cloud account, Telegram bot, repo structure | This structure is merged |
-| 1. Local watcher | Flights watcher runs locally | First test alert arrives on Telegram |
-| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions |
-| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM |
-| 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on |
-| 5. Automation & ops | CI/CD, backups, monitoring | A merge to `main` deploys itself; alerts if something breaks |
+| Phase | Goal | Done when | Status |
+|---|---|---|---|
+| 0. Setup | Repo conventions, local tools, Telegram bot, cloud and API accounts | Every item in the checklist below is ticked | 🚧 In progress |
+| 1. Local watcher | Flights watcher runs locally | First real deal alert arrives on Telegram | ⏳ |
+| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | ⏳ |
+| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | ⏳ |
+| 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on | ⏳ |
+| 5. Automation & ops | CI/CD, backups, monitoring | A merge to `main` deploys itself; alerts if something breaks | ⏳ |
+
+### Phase 0 checklist
+
+- [x] Repository structure and documentation
+- [x] Repository conventions (`.gitattributes`, `.editorconfig`, PR template, `CONTRIBUTING.md`)
+- [x] Local tools installed — see [development-setup.md](development-setup.md)
+- [x] Telegram bot, group and topic — see [telegram-setup.md](telegram-setup.md)
+- [ ] Travelpayouts account and API token
+- [ ] Oracle Cloud Always Free account
 
 ## Future
 

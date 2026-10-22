@@ -41,10 +41,10 @@ Telegram groups can have **topics**, but topics cannot be nested. Three levels a
 | Level | Telegram | Example |
 |---|---|---|
 | Whole system | Chat folder | "Deals" |
-| Watcher | Group | "Flights" |
+| Watcher | Group (supergroup with topics) | "Flights" |
 | Instance | Topic inside the group | "Bilbao" |
 
-One bot serves every group. Each instance config says which group and topic to post to.
+Display names are free text. One bot serves every group. Each instance config names the environment variables that hold its group and topic IDs (`chat_id_env`, `topic_id_env`), so no IDs live in the repository. Setup steps: [telegram-setup.md](telegram-setup.md).
 
 ## Where it runs
 
