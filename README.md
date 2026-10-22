@@ -1,5 +1,81 @@
 # bilbao-flight-deals
 
-Telegram bot that watches flight prices from Bilbao (BIO) and alerts when there is a deal.
+A self-hosted deal hunter that watches flight prices departing from **Bilbao (BIO)** and sends an alert to **Telegram** when a fare is clearly cheaper than usual.
 
-> Work in progress. Full documentation coming in the first pull request.
+It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
+
+> **Status:** 🚧 Phase 0 — project structure. See the [roadmap](docs/roadmap.md).
+
+---
+
+## What it does
+
+1. **Watches** round-trip fares from Bilbao to any destination, several times a day.
+2. **Filters** them by rules: departure between 30 days and 6 months ahead, direct or 1-stop flights.
+3. **Remembers** every price it sees, so it learns what "normal" looks like for each route.
+4. **Decides** whether a fare is a deal:
+   - at least **30% below** the usual price for that route, **or**
+   - under **€60 per person**.
+5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
+6. **Summarises** the best fares every Sunday.
+
+Example alert:
+
+```
+✈️ Deal: Bilbao → Rome
+Out 14 Dec · back 18 Dec (4 nights) · direct
+€98 for 2 people (€49 pp)
+Usually ~€170 → -42%
+[View flight]
+```
+
+## Architecture
+
+The system is split into **watchers** (one per category, e.g. flights, clothes, watches) that share a common **core**. Each watcher can run several **instances** with different settings — for example *flights from Bilbao*, *flights from Madrid* — all from the same image, each defined by a config file.
+
+```mermaid
+flowchart TD
+    subgraph Watchers
+        F["✈️ flights watcher<br/>instance: BIO"]
+        C["👕 clothes watcher<br/>(future)"]
+        W["⌚ watches watcher<br/>(future)"]
+    end
+    F --> CORE
+    C -.-> CORE
+    W -.-> CORE
+    CORE["Core<br/>price history · deal rules · de-duplication"] --> DB[("PostgreSQL")]
+    CORE --> TG["Telegram bot<br/>group per category · topic per instance"]
+```
+
+More detail in [docs/architecture.md](docs/architecture.md).
+
+## Tech stack
+
+| Area | Tool |
+|---|---|
+| Language | Python |
+| Containers | Docker, GitHub Container Registry |
+| Orchestration | Kubernetes (k3s) |
+| Infrastructure as Code | Terraform (Oracle Cloud Always Free) |
+| CI/CD | GitHub Actions |
+| Data | PostgreSQL |
+| Flight prices | Travelpayouts / Aviasales Data API |
+| Notifications | Telegram Bot API |
+
+Everything runs on free tiers.
+
+## Repository layout
+
+```
+.
+├── config/watchers/   # One YAML file per watcher instance (e.g. flights-bio.yaml)
+├── core/              # Shared code: price history, deal rules, Telegram notifier
+├── watchers/flights/  # Flights watcher (fetches fares from the price API)
+├── infra/terraform/   # Cloud infrastructure (network, VM)
+├── infra/k8s/         # Kubernetes manifests
+└── docs/              # Architecture and roadmap
+```
+
+## License
+
+[MIT](LICENSE)
