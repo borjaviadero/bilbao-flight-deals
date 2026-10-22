@@ -47,7 +47,7 @@ flowchart TD
     CORE --> TG["Telegram bot<br/>group per category · topic per instance"]
 ```
 
-More detail in [docs/architecture.md](docs/architecture.md).
+More detail in [docs/architecture.md](docs/architecture.md). Telegram setup: [docs/telegram-setup.md](docs/telegram-setup.md).
 
 ## Tech stack
 
@@ -73,11 +73,11 @@ Everything runs on free tiers.
 ├── watchers/flights/  # Flights watcher (fetches fares from the price API)
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
-├── docs/              # Architecture and roadmap
+├── docs/              # Architecture, roadmap and Telegram setup
 └── .github/           # Pull request template (CI workflows later)
 ```
 
-Root files: `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
+Root files: `.env.example` (required environment variables), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
 
 ## Contributing
 
