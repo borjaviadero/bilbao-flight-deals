@@ -1,3 +1,5 @@
+# Files Git must never track: secrets, local state, caches and editor files.
+
 # Secrets — never commit these
 .env
 *.env

@@ -73,8 +73,15 @@ Everything runs on free tiers.
 ├── watchers/flights/  # Flights watcher (fetches fares from the price API)
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
-└── docs/              # Architecture and roadmap
+├── docs/              # Architecture and roadmap
+└── .github/           # Pull request template (CI workflows later)
 ```
+
+Root files: `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branch, commit and pull request conventions.
 
 ## License
 
