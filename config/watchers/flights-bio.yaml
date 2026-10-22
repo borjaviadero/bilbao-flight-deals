@@ -1,0 +1,40 @@
+# Flights watcher instance: departures from Bilbao.
+# To watch another airport, copy this file and change `origin` and `telegram.topic`.
+
+watcher: flights
+instance: flights-bio
+enabled: true
+
+schedule: "0 */6 * * *"        # every 6 hours (cron)
+
+search:
+  origin: BIO                  # Bilbao airport (IATA code)
+  destinations: any
+  trip: round_trip
+  passengers: 2
+  currency: EUR
+  departure_window:
+    min_days_ahead: 30         # no last-minute deals: time to book days off
+    max_days_ahead: 180        # up to ~6 months ahead
+  trip_length_nights: any
+  max_stops: 1                 # direct or 1 stop (e.g. BIO → DUB → HER)
+  layover_minutes:
+    min: 90
+    max: 720
+
+deal_rules:
+  match: any                   # alert if ANY rule matches
+  rules:
+    - type: drop_vs_usual
+      min_drop_percent: 30
+    - type: max_price_per_person
+      amount: 60
+
+alerts:
+  repeat_only_if_lower: true   # don't re-alert the same flight unless the price drops further
+  flag_separate_tickets: true  # warn when a 1-stop trip is two separate bookings
+  weekly_summary: sunday
+
+telegram:
+  group: flights
+  topic: bilbao
