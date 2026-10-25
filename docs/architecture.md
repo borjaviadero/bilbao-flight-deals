@@ -24,10 +24,10 @@ sequenceDiagram
     K->>W: run every few hours
     W->>API: fetch round-trip fares from BIO
     API-->>W: fares
-    W->>W: apply filters (dates, stops)
+    W->>W: apply filters (stops, departure window)
     W->>DB: store prices
     W->>DB: get usual price per route
-    W->>W: is it a deal? (-30% or < €60 pp)
+    W->>W: is it a deal? (rules of its deal window)
     alt new deal (or lower than last alert)
         W->>TG: send alert to topic
         W->>DB: remember alert
@@ -61,5 +61,6 @@ flowchart LR
 
 - **Free by design.** Oracle Cloud Always Free ARM (2 OCPU / 12 GB), Travelpayouts free data API, GitHub free tier.
 - **ARM images.** The server is ARM, so images are built for `linux/arm64` (and `amd64` for local use).
-- **Prices are cached, not live.** The free price API returns recently searched fares. Good for spotting drops; the price may change when opening the link.
-- **Cold start.** "Usual price" needs history, so for the first weeks the `< €60 pp` rule does most of the work.
+- **Prices are cached, not live.** The free price API returns recently searched fares (kept 2–7 days). Good for spotting drops; the price may change when opening the link. Coverage is strong 1–2 months ahead and thin further out — see [price-source.md](price-source.md).
+- **Deal windows.** Each instance defines windows of departure dates with their own rules (e.g. regular 30–180 days, last minute 7–29 days with stricter thresholds).
+- **Cold start.** "Usual price" needs history, so for the first weeks the per-person price rules do most of the work.
