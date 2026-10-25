@@ -17,7 +17,7 @@
 - [x] Repository conventions (`.gitattributes`, `.editorconfig`, PR template, `CONTRIBUTING.md`)
 - [x] Local tools installed — see [development-setup.md](development-setup.md)
 - [x] Telegram bot, group and topic — see [telegram-setup.md](telegram-setup.md)
-- [ ] Travelpayouts account and API token
+- [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [ ] Oracle Cloud Always Free account
 
 ## Future

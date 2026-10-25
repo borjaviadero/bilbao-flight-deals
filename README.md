@@ -4,18 +4,21 @@ A self-hosted deal hunter that watches flight prices departing from **Bilbao (BI
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
 
-> **Status:** 🚧 Phase 0 — setup in progress: repository ✅ · dev tools ✅ · Telegram bot ✅ · cloud and price API accounts ⏳. See the [roadmap](docs/roadmap.md).
+> **Status:** 🚧 Phase 0 — setup in progress: repository ✅ · dev tools ✅ · Telegram bot ✅ · price API ✅ · cloud account ⏳. See the [roadmap](docs/roadmap.md).
 
 ---
 
 ## What it does
 
 1. **Watches** round-trip fares from Bilbao to any destination, several times a day.
-2. **Filters** them by rules: departure between 30 days and 6 months ahead, direct or 1-stop flights.
+2. **Filters** them: direct or 1-stop flights, departing between 7 days and 6 months ahead.
 3. **Remembers** every price it sees, so it learns what "normal" looks like for each route.
-4. **Decides** whether a fare is a deal:
-   - at least **30% below** the usual price for that route, **or**
-   - under **€60 per person**.
+4. **Decides** whether a fare is a deal, with stricter rules for short notice:
+
+   | Departure | Alert if | Label |
+   |---|---|---|
+   | 30 days – 6 months | ≥ 30% below usual **or** < €60 per person | ✈️ Deal |
+   | 7 – 29 days | ≥ 50% below usual **or** ≤ €30 per person | ⚡ Super deal · last minute |
 5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
 6. **Summarises** the best fares every Sunday.
 
@@ -68,7 +71,8 @@ Everything runs on free tiers.
 
 1. Install the tools: [docs/development-setup.md](docs/development-setup.md)
 2. Set up Telegram: [docs/telegram-setup.md](docs/telegram-setup.md)
-3. Copy `.env.example` to `.env` and fill in the values
+3. Get a price API token: [docs/price-source.md](docs/price-source.md)
+4. Copy `.env.example` to `.env` and fill in the values
 
 The watchers themselves arrive in Phase 1.
 
@@ -81,7 +85,7 @@ The watchers themselves arrive in Phase 1.
 ├── watchers/flights/  # Flights watcher (fetches fares from the price API)
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
-├── docs/              # Architecture, roadmap, development and Telegram setup
+├── docs/              # Architecture, roadmap, setup guides and price source notes
 └── .github/           # Pull request template (CI workflows later)
 ```
 
