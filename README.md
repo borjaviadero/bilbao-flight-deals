@@ -4,7 +4,7 @@ A self-hosted deal hunter that watches flight prices departing from **Bilbao (BI
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
 
-> **Status:** 🚧 Phase 0 — setup in progress: repository ✅ · dev tools ✅ · Telegram bot ✅ · price API ✅ · cloud account ⏳. See the [roadmap](docs/roadmap.md).
+> **Status:** ✅ Phase 0 (setup) done · 🚧 Phase 1 (local flights watcher) next. See the [roadmap](docs/roadmap.md).
 
 ---
 
@@ -72,7 +72,8 @@ Everything runs on free tiers.
 1. Install the tools: [docs/development-setup.md](docs/development-setup.md)
 2. Set up Telegram: [docs/telegram-setup.md](docs/telegram-setup.md)
 3. Get a price API token: [docs/price-source.md](docs/price-source.md)
-4. Copy `.env.example` to `.env` and fill in the values
+4. Create the cloud account: [docs/oracle-cloud-setup.md](docs/oracle-cloud-setup.md)
+5. Copy `.env.example` to `.env` and fill in the values
 
 The watchers themselves arrive in Phase 1.
 
