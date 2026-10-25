@@ -1,6 +1,6 @@
 # terraform
 
-Infrastructure as Code for Oracle Cloud Always Free. Planned for **Phase 3**.
+Infrastructure as Code for Oracle Cloud Always Free, in the home region **Spain Central (Madrid)**. Planned for **Phase 3**. Account setup: [docs/oracle-cloud-setup.md](../../docs/oracle-cloud-setup.md).
 
 - Network (VCN, subnet, security rules)
 - ARM VM (within the 2 OCPU / 12 GB free limit)
