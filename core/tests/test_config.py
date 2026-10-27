@@ -134,3 +134,22 @@ class TestHelpers:
         invalid.write_text("watcher: x\n", encoding="utf-8")
         with pytest.raises(ConfigError, match="invalid configuration"):
             load_instance_config(invalid, InstanceConfig)
+
+
+class TestLabels:
+    def test_plain_label(self) -> None:
+        w = DealWindow.model_validate(window("w", 1, 2))
+        assert w.label_for("es") == "w"
+
+    def test_label_per_language_with_fallbacks(self) -> None:
+        data = window("w", 1, 2)
+        data["label"] = {"en": "Deal", "es": "Chollo"}
+        assert DealWindow.model_validate(data).label_for("es") == "Chollo"
+        data["label"] = {"en": "Deal"}
+        assert DealWindow.model_validate(data).label_for("es") == "Deal"
+
+    def test_unknown_language_rejected(self) -> None:
+        data = window("w", 1, 2)
+        data["label"] = {"fr": "Affaire"}
+        with pytest.raises(ValueError):
+            DealWindow.model_validate(data)

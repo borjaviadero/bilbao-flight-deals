@@ -53,6 +53,16 @@ curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" 
 
 `true` and a message in the topic means everything is wired correctly.
 
+## Message language
+
+Alerts are sent in the language set in the instance config (`telegram.language`: `en` or `es`). Deal window labels can be given per language:
+
+```yaml
+label:
+  en: "✈️ Deal"
+  es: "✈️ Chollo"
+```
+
 ## Adding a new instance
 
 For example *flights from Madrid*: create a `Madrid` topic in the same group, get its ID as in step 3, add `TELEGRAM_FLIGHTS_MAD_TOPIC_ID` to `.env` and `.env.example`, and reference it from the new instance config.

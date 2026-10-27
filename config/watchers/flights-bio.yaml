@@ -23,7 +23,9 @@ search:
 # Prices from the API are per adult; per-person rules compare against that price.
 deal_windows:
   - name: regular              # enough time to book days off
-    label: "✈️ Deal"
+    label:                     # alert title, per language
+      en: "✈️ Deal"
+      es: "✈️ Chollo"
     min_days_ahead: 30
     max_days_ahead: 180        # ~6 months
     match: any                 # alert if ANY rule matches
@@ -36,7 +38,9 @@ deal_windows:
         amount: 40
 
   - name: last_minute          # short notice: only exceptional prices
-    label: "⚡ Super deal · last minute"
+    label:
+      en: "⚡ Super deal · last minute"
+      es: "⚡ Superprecio · última hora"
     min_days_ahead: 7
     max_days_ahead: 29
     match: any
@@ -61,3 +65,4 @@ telegram:
   topic: bilbao                                  # topic for departures from Bilbao
   chat_id_env: TELEGRAM_FLIGHTS_CHAT_ID          # env var holding the group chat ID
   topic_id_env: TELEGRAM_FLIGHTS_BIO_TOPIC_ID    # env var holding the topic (thread) ID
+  language: es                                   # language of the messages (en or es)

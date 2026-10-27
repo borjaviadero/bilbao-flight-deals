@@ -81,6 +81,8 @@ Everything runs on free tiers.
 make install   # creates .venv with Python 3.13 and all packages
 make check     # lint, type checks and tests
 make search    # list current fares from Bilbao that pass the filters
+make dry-run   # full run, prints the Telegram messages without sending or storing
+make run       # full run: records price history and sends alerts
 ```
 
 Run `make help` to list all tasks.

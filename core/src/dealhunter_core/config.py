@@ -56,12 +56,16 @@ class MaxPricePerPersonRule(StrictModel):
 
 DealRule = Annotated[DropVsUsualRule | MaxPricePerPersonRule, Field(discriminator="type")]
 
+Language = Literal["en", "es"]
+
 
 class DealWindow(StrictModel):
     """A range of days ahead (from today to departure) with its own deal rules."""
 
     name: str = Field(min_length=1)
-    label: str = Field(min_length=1)
+    label: str | dict[Language, str] = Field(
+        description="Alert title; a plain string or one per language, e.g. {en: Deal, es: Chollo}"
+    )
     min_days_ahead: int = Field(ge=0)
     max_days_ahead: int = Field(ge=0)
     match: Literal["any", "all"] = "any"
@@ -75,6 +79,12 @@ class DealWindow(StrictModel):
                 f"is greater than max_days_ahead ({self.max_days_ahead})"
             )
         return self
+
+    def label_for(self, language: Language) -> str:
+        """The label in ``language`` (falls back to English, then to the window name)."""
+        if isinstance(self.label, str):
+            return self.label
+        return self.label.get(language) or self.label.get("en") or self.name
 
     def contains(self, days_ahead: int) -> bool:
         """Whether a departure ``days_ahead`` days from today falls in this window."""
@@ -122,6 +132,7 @@ class TelegramTarget(StrictModel):
     topic: str
     chat_id_env: str
     topic_id_env: str
+    language: Language = "en"
 
     def resolve(self, environ: Mapping[str, str] | None = None) -> ResolvedTelegramTarget:
         """Read the chat and topic IDs from the environment."""
