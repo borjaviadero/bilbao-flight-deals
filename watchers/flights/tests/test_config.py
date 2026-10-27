@@ -32,6 +32,11 @@ def test_flights_bio_values() -> None:
     assert regular is not None and regular.name == "regular"
     assert last_minute is not None and last_minute.name == "last_minute"
     assert MaxPricePerPersonRule(type="max_price_per_person", amount=30) in last_minute.rules
+    assert MaxPricePerPersonRule(type="max_price_per_person", amount=40) in regular.rules
+    assert cfg.alerts.max_per_run == 5
+    assert cfg.alerts.warmup_first_run is True
+    drop = regular.drop_rule
+    assert drop is not None and (drop.lookback_days, drop.min_observations) == (30, 5)
 
 
 def test_rejects_invalid_origin(tmp_path: Path) -> None:

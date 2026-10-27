@@ -8,6 +8,10 @@ secrets/
 *.pem
 *.key
 
+# Local data (SQLite price history)
+data/
+*.sqlite3
+
 # Python
 __pycache__/
 *.py[cod]
