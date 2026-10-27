@@ -1,5 +1,7 @@
 # bilbao-flight-deals
 
+[![CI](https://github.com/borjaviadero/bilbao-flight-deals/actions/workflows/ci.yml/badge.svg)](https://github.com/borjaviadero/bilbao-flight-deals/actions/workflows/ci.yml)
+
 A self-hosted deal hunter that watches flight prices departing from **Bilbao (BIO)** and sends an alert to **Telegram** when a fare is clearly cheaper than usual.
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
@@ -99,6 +101,8 @@ make docker-dry-run  # same dry run, in the container
 make docker-run      # same full run, in the container (history in a Docker volume)
 ```
 
+Every merge to `main` publishes the image for `amd64` and `arm64` as `ghcr.io/borjaviadero/flights-watcher` (tags `latest` and `sha-<commit>`).
+
 Run `make help` to list all tasks.
 
 ## Repository layout
@@ -111,7 +115,7 @@ Run `make help` to list all tasks.
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
 ├── docs/              # Architecture, roadmap, setup guides and price source notes
-└── .github/           # Pull request template (CI workflows later)
+└── .github/           # CI workflow (checks + image to GHCR) and pull request template
 ```
 
 Root files: `pyproject.toml` (uv workspace and tool settings), `uv.lock` (pinned dependency versions), `.python-version`, `Makefile` (common tasks), `.env.example` (required environment variables), `.dockerignore` (files kept out of images), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.

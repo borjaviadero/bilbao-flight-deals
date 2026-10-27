@@ -10,7 +10,7 @@ Everything in the repository is written in **English**: code, comments, docs, co
 
 1. Create a branch from `main`.
 2. Commit small, focused changes.
-3. Run `make check` (lint, type checks, tests) — it must pass.
+3. Run `make check` (lint, type checks, tests) — it must pass. GitHub Actions runs it again on every pull request, together with a test build of the Docker image.
 4. Open a pull request using the template.
 5. Review and merge. `main` always holds the reviewed, working state.
 6. Delete the merged branch and update your local copy:
