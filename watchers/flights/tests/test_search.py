@@ -40,6 +40,7 @@ def fare(days_ahead: int, price: str, *, stops: tuple[int, int] = (0, 0), **kw: 
         stops_back=stops[1],
         duration_minutes=240,
         outbound_minutes=120,
+        return_minutes=125,
         gate="g",
         link="https://example.test",
     )

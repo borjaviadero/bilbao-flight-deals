@@ -90,6 +90,8 @@ def _parse_fare(item: Mapping[str, Any], currency: str) -> Fare:
     if not item.get("return_at"):
         raise ValueError("not a round trip")
     link = str(item.get("link", ""))
+    total = int(item.get("duration") or 0)  # both legs, layovers included
+    outbound = int(item.get("duration_to") or total // 2)
     return Fare(
         origin_airport=str(item["origin_airport"]),
         destination_airport=str(item["destination_airport"]),
@@ -103,7 +105,8 @@ def _parse_fare(item: Mapping[str, Any], currency: str) -> Fare:
         stops_out=int(item.get("transfers", 0)),
         stops_back=int(item.get("return_transfers", 0)),
         duration_minutes=int(item.get("duration", 0)),
-        outbound_minutes=int(item.get("duration_to") or int(item.get("duration", 0)) // 2),
+        outbound_minutes=outbound,
+        return_minutes=int(item.get("duration_back") or (total - outbound if total else 0)),
         gate=str(item.get("gate", "")),
         link=f"{BOOKING_BASE_URL}{link}" if link.startswith("/") else link,
     )
