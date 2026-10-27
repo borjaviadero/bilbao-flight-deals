@@ -60,4 +60,5 @@ plugins = ["pydantic.mypy"]
 # --- pytest --------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["core/tests", "watchers/flights/tests"]
-addopts = "-ra --strict-markers"
+# importlib mode: test files in different packages may share a name (e.g. test_config.py)
+addopts = "-ra --strict-markers --import-mode=importlib"
