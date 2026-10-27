@@ -1,12 +1,13 @@
-"""Readable names for messages: cities (``MIL`` → ``Milán``) and airlines (``V7`` → ``Volotea``).
+"""Reference data from public Travelpayouts files (no token needed).
 
-Names come from public Travelpayouts data files (no token needed):
-
-- ``/data/<lang>/cities.json``, in the message language;
-- ``/data/en/airlines.json``, in English (airline names are brand names).
+- City names for messages (``MIL`` → ``Milán``), from ``/data/<lang>/cities.json``.
+- City countries for filters (``TCI`` → ``ES``), from ``/data/en/cities.json``.
+- Airline names for messages (``V7`` → ``Volotea``), from ``/data/en/airlines.json``
+  (airline names are brand names, so English is used).
 
 The lists change rarely, so each one is cached in the history database and refreshed
-every 30 days. If a list cannot be fetched, messages fall back to IATA codes.
+every 30 days. If a list cannot be fetched, messages fall back to IATA codes and
+filters that need a country are skipped for the unknown cities.
 """
 
 from __future__ import annotations
@@ -35,6 +36,17 @@ def parse_cities(payload: Any) -> dict[str, str]:
         str(item["code"]): str(item["name"])
         for item in payload
         if isinstance(item, Mapping) and item.get("code") and item.get("name")
+    }
+
+
+def parse_city_countries(payload: Any) -> dict[str, str]:
+    """``[{"code": "TCI", "country_code": "ES", ...}, ...]`` → ``{"TCI": "ES"}``."""
+    if not isinstance(payload, list):
+        return {}
+    return {
+        str(item["code"]): str(item["country_code"])
+        for item in payload
+        if isinstance(item, Mapping) and item.get("code") and item.get("country_code")
     }
 
 
@@ -73,6 +85,22 @@ def city_names(
         cache_name=f"cities:{language}",
         parse=parse_cities,
         what=f"city names ({language})",
+        now=now,
+        store=store,
+    )
+
+
+def city_countries(
+    http: JsonHttpClient, history: PriceHistory, now: datetime, *, store: bool = True
+) -> dict[str, str]:
+    """City code → ISO country code. See :func:`_reference_names`."""
+    return _reference_names(
+        http,
+        history,
+        url=CITIES_URL.format(language="en"),
+        cache_name="city-countries",
+        parse=parse_city_countries,
+        what="city countries",
         now=now,
         store=store,
     )

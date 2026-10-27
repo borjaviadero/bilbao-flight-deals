@@ -28,7 +28,7 @@ from flights_watcher.config import FlightsInstanceConfig
 from flights_watcher.deals import find_opportunities, to_observations
 from flights_watcher.messages import alert_message, start_message, summary_message
 from flights_watcher.models import Candidate
-from flights_watcher.places import airline_names, city_names
+from flights_watcher.places import airline_names, city_countries, city_names
 from flights_watcher.price_api import TravelpayoutsClient
 from flights_watcher.search import fetch_fares, select_candidates
 
@@ -69,7 +69,12 @@ def run_instance(
     run_id = None if dry_run else history.start_run(instance, now)
 
     fares = fetch_fares(config, client, today)
-    candidates = select_candidates(fares, config, today)
+    countries = (
+        city_countries(http, history, now, store=not dry_run)
+        if http is not None and config.search.direct_only_countries
+        else {}
+    )
+    candidates = select_candidates(fares, config, today, countries)
     warmup = config.alerts.warmup_first_run and history.completed_runs(instance) == 0
     report = RunReport(warmup=warmup, fetched=len(fares), candidates=len(candidates))
 

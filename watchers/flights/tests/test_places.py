@@ -8,7 +8,14 @@ from datetime import UTC, datetime, timedelta
 
 from dealhunter_core.history import PriceHistory
 from dealhunter_core.http import HttpResponse, JsonHttpClient
-from flights_watcher.places import airline_names, city_names, parse_airlines, parse_cities
+from flights_watcher.places import (
+    airline_names,
+    city_countries,
+    city_names,
+    parse_airlines,
+    parse_cities,
+    parse_city_countries,
+)
 
 NOW = datetime(2026, 10, 27, 12, tzinfo=UTC)
 CITIES = [{"code": "MIL", "name": "Milán"}, {"code": "VLC", "name": "Valencia"}, {"code": "X"}]
@@ -71,3 +78,14 @@ def test_airline_names_are_cached_separately() -> None:
         assert airline_names(client, h, NOW)["VY"] == "Vueling"
         assert h.cached("cities:es", max_age=timedelta(days=30), now=NOW) is None
     assert calls == ["https://api.travelpayouts.com/data/en/airlines.json"]
+
+
+def test_city_countries() -> None:
+    payload = [{"code": "TCI", "country_code": "ES"}, {"code": "MIL", "country_code": "IT"}, {}]
+    assert parse_city_countries(payload) == {"TCI": "ES", "MIL": "IT"}
+    calls: list[str] = []
+    client = http([HttpResponse(200, json.dumps(payload).encode())], calls)
+    with PriceHistory.in_memory() as h:
+        assert city_countries(client, h, NOW)["TCI"] == "ES"
+        assert city_countries(client, h, NOW)["MIL"] == "IT"  # cached
+    assert calls == ["https://api.travelpayouts.com/data/en/cities.json"]

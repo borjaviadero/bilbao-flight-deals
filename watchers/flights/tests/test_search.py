@@ -113,3 +113,19 @@ def test_select_drops_trips_too_long_for_the_distance() -> None:
     )  # 14 n
     result = select_candidates([short_trip, too_long, long_haul], config(), TODAY)
     assert sorted(c.fare.destination_airport for c in result) == ["MEX", "MXP"]
+
+
+def test_select_drops_stops_to_direct_only_countries() -> None:
+    countries = {"TCI": "ES", "MIL": "IT"}
+    tenerife_stop = fare(40, "40", stops=(1, 0), destination_airport="TFN", destination_city="TCI")
+    tenerife_direct = fare(41, "60", destination_airport="TFN", destination_city="TCI")
+    milan_stop = fare(40, "30", stops=(1, 0))
+    unknown_stop = fare(40, "35", stops=(0, 1), destination_airport="ZZZ", destination_city="ZZZ")
+    result = select_candidates(
+        [tenerife_stop, tenerife_direct, milan_stop, unknown_stop], config(), TODAY, countries
+    )
+    assert [(c.fare.destination_airport, c.fare.max_stops) for c in result] == [
+        ("MXP", 1),
+        ("ZZZ", 1),
+        ("TFN", 0),
+    ]

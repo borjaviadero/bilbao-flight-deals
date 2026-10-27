@@ -94,3 +94,7 @@ class TestTripLength:
         data["trip_length"] = rules
         with pytest.raises(ValueError):
             FlightSearch.model_validate(data)
+
+
+def test_flights_bio_wants_direct_flights_within_spain() -> None:
+    assert load_config(CONFIG_DIR / "flights-bio.yaml").search.direct_only_countries == ["ES"]
