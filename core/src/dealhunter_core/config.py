@@ -35,10 +35,16 @@ class StrictModel(BaseModel):
 
 
 class DropVsUsualRule(StrictModel):
-    """Deal if the price is at least ``min_drop_percent`` below the usual price."""
+    """Deal if the price is at least ``min_drop_percent`` below the usual price.
+
+    The usual price is the median of the prices seen for the same route in the last
+    ``lookback_days``. With fewer than ``min_observations`` the rule does not apply.
+    """
 
     type: Literal["drop_vs_usual"]
     min_drop_percent: float = Field(gt=0, lt=100)
+    lookback_days: int = Field(default=30, ge=1)
+    min_observations: int = Field(default=5, ge=1)
 
 
 class MaxPricePerPersonRule(StrictModel):
@@ -74,6 +80,11 @@ class DealWindow(StrictModel):
         """Whether a departure ``days_ahead`` days from today falls in this window."""
         return self.min_days_ahead <= days_ahead <= self.max_days_ahead
 
+    @property
+    def drop_rule(self) -> DropVsUsualRule | None:
+        """The window's ``drop_vs_usual`` rule, if it has one."""
+        return next((r for r in self.rules if isinstance(r, DropVsUsualRule)), None)
+
 
 # --- Alerts and Telegram -----------------------------------------------------------
 
@@ -84,6 +95,12 @@ class AlertSettings(StrictModel):
     """How alerts are sent."""
 
     repeat_only_if_lower: bool = True
+    max_per_run: int = Field(
+        default=5, ge=1, description="Alerts per run; the rest go in a summary"
+    )
+    warmup_first_run: bool = Field(
+        default=True, description="First run only records prices and sends a start message"
+    )
     weekly_summary: Weekday | None = None
 
 
@@ -150,6 +167,13 @@ class InstanceConfig(StrictModel):
     def max_days_ahead(self) -> int:
         """Latest departure, in days ahead, covered by any window."""
         return max(window.max_days_ahead for window in self.deal_windows)
+
+    def window_named(self, name: str) -> DealWindow:
+        """The deal window called ``name`` (raises ``KeyError`` if there is none)."""
+        for window in self.deal_windows:
+            if window.name == name:
+                return window
+        raise KeyError(name)
 
     def window_for(self, days_ahead: int) -> DealWindow | None:
         """The deal window a departure falls into, or ``None`` if it is out of range."""

@@ -30,8 +30,10 @@ deal_windows:
     rules:
       - type: drop_vs_usual
         min_drop_percent: 30
+        lookback_days: 30      # usual price = median of the last 30 days for the route
+        min_observations: 5    # fewer prices seen → this rule does not apply yet
       - type: max_price_per_person
-        amount: 60
+        amount: 40
 
   - name: last_minute          # short notice: only exceptional prices
     label: "⚡ Super deal · last minute"
@@ -41,11 +43,15 @@ deal_windows:
     rules:
       - type: drop_vs_usual
         min_drop_percent: 50
+        lookback_days: 30
+        min_observations: 5
       - type: max_price_per_person
         amount: 30
 
 alerts:
   repeat_only_if_lower: true   # don't re-alert the same flight unless the price drops further
+  max_per_run: 5               # best 5 deals as alerts; the rest in one summary message
+  warmup_first_run: true       # first run: record prices, send only a "watching" message
   weekly_summary: sunday
 
 telegram:

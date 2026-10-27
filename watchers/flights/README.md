@@ -9,7 +9,7 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 | `price_api.py` | ✅ | Client for `GET /aviasales/v3/prices_for_dates`. Token in the `X-Access-Token` header; malformed entries are skipped with a warning. |
 | `search.py` | ✅ | `fetch_fares`: one request per departure month covered by the deal windows. `select_candidates`: max stops on either leg, deal window by days ahead, de-duplication (cheapest per route, dates and carrier), sorted by price. |
 | `cli.py` | ✅ | `python -m flights_watcher search --config …` lists the candidates. Read-only: stores nothing, sends nothing. |
-| Price history and deal rules | Phase 1 | Next pull request. |
+| `deals.py` | ✅ | Flights keys for the history (`route_key` = origin-destination airports), observations from candidates, and `find_opportunities` (evaluates each candidate against its window, using the route's usual price). |
 | Telegram alerts | Phase 1 | `run` command with dry-run mode. |
 | `Dockerfile` | Phase 2 | Container image. |
 

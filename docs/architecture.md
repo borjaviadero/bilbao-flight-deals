@@ -18,19 +18,19 @@ sequenceDiagram
     participant K as Kubernetes CronJob
     participant W as Watcher (flights-bio)
     participant API as Price API
-    participant DB as PostgreSQL
+    participant DB as SQLite (PostgreSQL later)
     participant TG as Telegram
 
     K->>W: run every few hours
     W->>API: fetch round-trip fares from BIO
     API-->>W: fares
     W->>W: apply filters (stops, departure window)
-    W->>DB: store prices
-    W->>DB: get usual price per route
+    W->>DB: get usual price per route (median, last 30 days)
     W->>W: is it a deal? (rules of its deal window)
+    W->>DB: store prices
     alt new deal (or lower than last alert)
-        W->>TG: send alert to topic
-        W->>DB: remember alert
+        W->>TG: send up to 5 alerts, the rest in one summary
+        W->>DB: remember alerts
     end
 ```
 
@@ -63,4 +63,6 @@ flowchart LR
 - **ARM images.** The server is ARM, so images are built for `linux/arm64` (and `amd64` for local use).
 - **Prices are cached, not live.** The free price API returns recently searched fares (kept 2–7 days). Good for spotting drops; the price may change when opening the link. Coverage is strong 1–2 months ahead and thin further out — see [price-source.md](price-source.md).
 - **Deal windows.** Each instance defines windows of departure dates with their own rules (e.g. regular 30–180 days, last minute 7–29 days with stricter thresholds).
-- **Cold start.** "Usual price" needs history, so for the first weeks the per-person price rules do most of the work.
+- **Usual price.** Median of the route's prices seen in the last 30 days (needs at least 5). The median ignores one-off outliers better than the mean. A price is compared with the history *before* it is recorded.
+- **Cold start.** The first run is a warm-up: it records prices and only sends a start message. Until a route has enough history, the per-person price rules do most of the work.
+- **Alert volume.** One alert per flight, at most 5 per run (best drop first, then cheapest); the rest go in a single summary message. An item is not alerted again unless its price drops further.
