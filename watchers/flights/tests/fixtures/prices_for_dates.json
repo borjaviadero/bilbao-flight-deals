@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "currency": "eur",
+  "data": [
+    {
+      "origin": "BIO",
+      "destination": "MIL",
+      "origin_airport": "BIO",
+      "destination_airport": "MXP",
+      "price": 26,
+      "airline": "W4",
+      "flight_number": "6412",
+      "departure_at": "2026-11-12T16:40:00+01:00",
+      "return_at": "2026-11-19T16:55:00+01:00",
+      "transfers": 0,
+      "return_transfers": 0,
+      "duration": 235,
+      "duration_to": 115,
+      "duration_back": 120,
+      "gate": "Farera",
+      "link": "/search/BIO1211MIL19111?t=example"
+    },
+    {
+      "origin": "BIO",
+      "destination": "LON",
+      "origin_airport": "BIO",
+      "destination_airport": "STN",
+      "price": 41,
+      "airline": "FR",
+      "flight_number": "7731",
+      "departure_at": "2026-12-05T07:10:00+01:00",
+      "return_at": "2026-12-08T21:30:00+01:00",
+      "transfers": 0,
+      "return_transfers": 1,
+      "duration": 410,
+      "gate": "Example Agency",
+      "link": "/search/BIO0512LON08121?t=example"
+    },
+    {
+      "origin": "BIO",
+      "destination": "BKK",
+      "origin_airport": "BIO",
+      "destination_airport": "BKK",
+      "price": 512,
+      "airline": "TK",
+      "flight_number": "1858",
+      "departure_at": "2027-01-15T10:00:00+01:00",
+      "return_at": "2027-01-30T10:00:00+07:00",
+      "transfers": 2,
+      "return_transfers": 2,
+      "duration": 2400,
+      "gate": "Example Agency",
+      "link": "/search/BIO1501BKK30011?t=example"
+    },
+    {
+      "origin": "BIO",
+      "destination": "MAD",
+      "price": 30,
+      "departure_at": "2026-11-20T08:00:00+01:00"
+    }
+  ]
+}
