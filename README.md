@@ -4,7 +4,7 @@ A self-hosted deal hunter that watches flight prices departing from **Bilbao (BI
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
 
-> **Status:** ✅ Phase 0 (setup) done · 🚧 Phase 1 (local flights watcher) next. See the [roadmap](docs/roadmap.md).
+> **Status:** ✅ Phase 0 (setup) done · 🚧 Phase 1 (local flights watcher) in progress. See the [roadmap](docs/roadmap.md).
 
 ---
 
@@ -56,12 +56,13 @@ More detail in [docs/architecture.md](docs/architecture.md).
 
 | Area | Tool |
 |---|---|
-| Language | Python |
+| Language | Python 3.13 · [uv](https://docs.astral.sh/uv/) workspace · pydantic |
+| Quality | Ruff (lint and format) · mypy (strict) · pytest |
 | Containers | Docker, GitHub Container Registry |
 | Orchestration | Kubernetes (k3s) |
 | Infrastructure as Code | Terraform (Oracle Cloud Always Free) |
 | CI/CD | GitHub Actions |
-| Data | PostgreSQL |
+| Data | SQLite (Phase 1), PostgreSQL later |
 | Flight prices | Travelpayouts / Aviasales Data API |
 | Notifications | Telegram Bot API |
 
@@ -74,23 +75,29 @@ Everything runs on free tiers.
 3. Get a price API token: [docs/price-source.md](docs/price-source.md)
 4. Create the cloud account: [docs/oracle-cloud-setup.md](docs/oracle-cloud-setup.md)
 5. Copy `.env.example` to `.env` and fill in the values
+6. Install and check:
 
-The watchers themselves arrive in Phase 1.
+```bash
+make install   # creates .venv with Python 3.13 and all packages
+make check     # lint, type checks and tests
+```
+
+Run `make help` to list all tasks.
 
 ## Repository layout
 
 ```
 .
 ├── config/watchers/   # One YAML file per watcher instance (e.g. flights-bio.yaml)
-├── core/              # Shared code: price history, deal rules, Telegram notifier
-├── watchers/flights/  # Flights watcher (fetches fares from the price API)
+├── core/              # Python package dealhunter-core: config, price history, deal rules, notifier
+├── watchers/flights/  # Python package flights-watcher: fetches fares from the price API
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
 ├── docs/              # Architecture, roadmap, setup guides and price source notes
 └── .github/           # Pull request template (CI workflows later)
 ```
 
-Root files: `.env.example` (required environment variables), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
+Root files: `pyproject.toml` (uv workspace and tool settings), `uv.lock` (pinned dependency versions), `.python-version`, `Makefile` (common tasks), `.env.example` (required environment variables), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
 
 ## Contributing
 

@@ -1,0 +1,63 @@
+# Workspace root: groups the Python packages of the project and holds shared tooling config.
+# Each package (core, each watcher) has its own pyproject.toml and becomes its own image later.
+
+[project]
+name = "bilbao-flight-deals"
+version = "0.1.0"
+description = "Self-hosted deal hunter: watches flight prices from Bilbao and alerts on Telegram."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+dependencies = [
+    "dealhunter-core",
+    "flights-watcher",
+]
+
+[tool.uv]
+package = false  # the root is not a package itself, only the workspace members are
+
+[tool.uv.workspace]
+members = ["core", "watchers/flights"]
+
+[tool.uv.sources]
+dealhunter-core = { workspace = true }
+flights-watcher = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "ruff>=0.8",
+    "types-PyYAML>=6.0",
+]
+
+# --- Ruff: linter and formatter ------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["core/src", "watchers/flights/src"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # import sorting
+    "B",       # bugbear: likely bugs
+    "UP",      # pyupgrade: modern syntax
+    "SIM",     # simplifications
+    "RUF",     # ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dealhunter_core", "flights_watcher"]
+
+# --- mypy: static type checking ------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+
+# --- pytest --------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["core/tests", "watchers/flights/tests"]
+addopts = "-ra --strict-markers"
