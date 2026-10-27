@@ -27,6 +27,7 @@ class Fare:
     stops_back: int
     duration_minutes: int
     outbound_minutes: int  # flight time of the outbound leg, a proxy for distance
+    return_minutes: int  # flight time of the return leg; 0 if unknown
     gate: str
     link: str
 

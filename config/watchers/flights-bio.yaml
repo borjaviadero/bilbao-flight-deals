@@ -24,6 +24,7 @@ search:
     - min_nights: 6            # longer flights, e.g. Mexico, New York
       max_nights: 21
   max_stops: 1                 # direct or 1 stop on each leg (e.g. BIO → DUB → HER)
+  direct_only_countries: [ES]  # within Spain, direct flights only (no stops either way)
   city_names:                  # override names from the data file (it says "Ciudad de Bilbao")
     BIO: Bilbao
   # Layover duration and separate-ticket detection are not available from the

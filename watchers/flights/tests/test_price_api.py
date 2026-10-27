@@ -40,6 +40,8 @@ def test_parse_valid_fares_and_skip_malformed() -> None:
     assert milan.total_price(2) == Decimal("52")
     assert milan.outbound_minutes == 115  # duration_to
     assert fares[1].outbound_minutes == 205  # no duration_to: half of the total
+    assert milan.return_minutes == 120  # duration_back
+    assert fares[1].return_minutes == 205  # no duration_back: total minus outbound
 
 
 def test_parse_error_payload() -> None:

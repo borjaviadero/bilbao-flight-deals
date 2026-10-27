@@ -13,6 +13,8 @@ from flights_watcher.config import FlightsInstanceConfig, load_config
 from flights_watcher.messages import (
     _truncate,
     alert_message,
+    flight_time,
+    leg,
     short_date,
     start_message,
     summary_message,
@@ -34,6 +36,7 @@ FARE = Fare(
     stops_back=0,
     duration_minutes=240,
     outbound_minutes=120,
+    return_minutes=125,
     gate="g",
     link="https://www.aviasales.com/search/X?a=1&b=2",
 )
@@ -69,11 +72,12 @@ NAMES = {"BIO": "Bilbao", "MIL": "Milán"}
 
 
 def test_alert_message_spanish() -> None:
-    text = alert_message(opportunity(drop="70"), config(), "es", NAMES)
+    text = alert_message(opportunity(drop="70"), config(), "es", NAMES, {"VY": "Vueling"})
     assert text.splitlines() == [
         "<b>✈️ Chollo · Bilbao → Milán (MXP)</b>",
-        "📅 jue 10 dic → lun 14 dic · 4 noches",
-        "🛫 Directo ida y vuelta · VY",
+        "🛫 Ida: jue 10 dic, 08:00 · 2 h · directo",
+        "🛬 Vuelta: lun 14 dic, 20:00 · 2 h 05 min · directo",
+        "🌙 4 noches · aerolínea Vueling",
         "💶 30 € por persona · 60 € para 2",
         "📉 70% por debajo de lo habitual (100 €)",
         "⏳ Sale dentro de 44 días",
@@ -83,9 +87,10 @@ def test_alert_message_spanish() -> None:
 
 
 def test_alert_message_english_with_stops_and_no_history() -> None:
-    text = alert_message(opportunity(stops_back=1), config(), "en")
+    text = alert_message(opportunity(stops_back=1, return_minutes=0), config(), "en")
     assert "<b>✈️ Deal · BIO → MXP (MIL)</b>" in text  # no names: codes
-    assert "Stops: 0 out · 1 back" in text
+    assert "🛫 Out: Thu 10 Dec, 08:00 · 2 h · direct" in text
+    assert "🛬 Back: Mon 14 Dec, 20:00 · 1 stop" in text  # unknown flight time omitted
     assert "below usual" not in text
 
 
@@ -131,3 +136,17 @@ def test_drop_is_rounded_to_whole_percent() -> None:
 
 def test_flights_bio_overrides_the_origin_name() -> None:
     assert config().search.city_names == {"BIO": "Bilbao"}
+
+
+def test_flight_time_and_leg() -> None:
+    assert flight_time(45) == "45 min"
+    assert flight_time(120) == "2 h"
+    assert flight_time(125) == "2 h 05 min"
+    assert leg("Ida", datetime(2026, 12, 10, 7, 5), 400, 2, "es") == (
+        "Ida: jue 10 dic, 07:05 · 6 h 40 min · 2 escalas"
+    )
+
+
+def test_unknown_airline_keeps_the_code() -> None:
+    text = alert_message(opportunity(), config(), "es", NAMES, {"V7": "Volotea"})
+    assert "🌙 4 noches · aerolínea VY" in text

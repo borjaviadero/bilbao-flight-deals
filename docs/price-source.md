@@ -17,9 +17,12 @@ Aviasales is a metasearch engine: prices come from many airlines and agencies, a
 - **Per adult.** Multiply by the number of passengers for the trip total.
 - **Not exhaustive.** Popular routes and near dates are well covered; rare routes and far dates are sparse.
 - **Links are relative.** Prepend `https://www.aviasales.com` to the `link` field.
-- **Stops, not layovers.** The response gives the number of stops per leg (`transfers`, `return_transfers`) but not layover durations or whether a 1-stop trip is two separate tickets. The watcher therefore filters by number of stops only.
-- **Flight time.** `duration_to` is the outbound flight time in minutes (`duration` is both legs). The watcher uses it as a proxy for distance to choose the allowed trip length.
+- **Stops, not layovers.** The response gives the number of stops per leg (`transfers`, `return_transfers`) but not layover durations or whether a 1-stop trip is two separate tickets. The watcher therefore filters by number of stops only, and alerts cannot say where the stop is; the booking page shows it.
+- **Times.** `departure_at` and `return_at` include the departure time, in the local time of each departure airport (with its UTC offset).
+- **Flight time.** `duration_to` and `duration_back` are the flight time of each leg in minutes, layovers included (`duration` is both legs). The watcher uses it as a proxy for distance to choose the allowed trip length.
 - **City names.** The free data file `https://api.travelpayouts.com/data/{language}/cities.json` (no token) maps IATA city codes to names. It is downloaded at most every 30 days and cached in the history database. Some names are official rather than everyday (`BIO` is "Ciudad de Bilbao" in Spanish), so `search.city_names` in the instance config can override them.
+- **City countries.** The English `cities.json` also gives each city's `country_code`, used by `search.direct_only_countries` (e.g. no stops within Spain). Cities missing from the file are kept.
+- **Airline names.** `https://api.travelpayouts.com/data/en/airlines.json` maps airline codes (`V7`) to names (`Volotea`), cached the same way. The `airline` field of a fare is a single carrier, even when the return is flown by another airline.
 
 ## Account and token
 

@@ -44,6 +44,10 @@ class FlightSearch(StrictModel):
         default_factory=list, description="Nights allowed by flight time; empty = any length"
     )
     max_stops: int = Field(ge=0, le=2, description="Maximum stops on each leg")
+    direct_only_countries: list[str] = Field(
+        default_factory=list,
+        description="ISO country codes where only direct flights (both legs) are wanted",
+    )
     city_names: dict[IataCode, str] = Field(
         default_factory=dict,
         description="Names that replace the downloaded ones, by IATA city or airport code",

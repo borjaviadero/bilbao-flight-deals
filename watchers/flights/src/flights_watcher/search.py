@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import date, timedelta
 
 from flights_watcher.config import FlightsInstanceConfig
@@ -54,12 +54,17 @@ def fetch_fares(
 
 
 def select_candidates(
-    fares: Iterable[Fare], config: FlightsInstanceConfig, today: date
+    fares: Iterable[Fare],
+    config: FlightsInstanceConfig,
+    today: date,
+    countries: Mapping[str, str] | None = None,
 ) -> list[Candidate]:
     """Keep fares that fit the search and fall into a deal window.
 
-    Drops fares with too many stops, a trip length that does not fit the flight
-    time, or a departure outside every window; removes duplicates
+    Drops fares with too many stops, stops on a trip to a ``direct_only_countries``
+    destination (``countries`` maps city codes to countries; unknown cities are kept),
+    a trip length that does not fit the flight time, or a departure outside every
+    window; removes duplicates
     (same route, dates and carrier) keeping the cheapest, and sorts by price.
     """
     best: dict[str, Candidate] = {}
@@ -67,6 +72,8 @@ def select_candidates(
         if fare.origin_airport != config.search.origin:
             continue
         if fare.max_stops > config.search.max_stops:
+            continue
+        if fare.max_stops > 0 and _direct_only(fare, config, countries or {}):
             continue
         if not config.search.nights_allowed(fare.outbound_minutes, fare.nights):
             continue
@@ -79,3 +86,9 @@ def select_candidates(
             best[fare.key] = Candidate(fare=fare, window=window.name, days_ahead=days)
 
     return sorted(best.values(), key=lambda c: (c.fare.price_per_person, c.days_ahead))
+
+
+def _direct_only(fare: Fare, config: FlightsInstanceConfig, countries: Mapping[str, str]) -> bool:
+    """Whether the destination's country only accepts direct flights."""
+    country = countries.get(fare.destination_city) or countries.get(fare.destination_airport)
+    return country is not None and country in config.search.direct_only_countries

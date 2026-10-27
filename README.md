@@ -11,7 +11,7 @@ It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestr
 ## What it does
 
 1. **Watches** round-trip fares from Bilbao to any destination, several times a day.
-2. **Filters** them: direct or 1-stop flights, departing between 7 days and 6 months ahead, and a trip length that fits the distance (2–7 nights for flights up to 3 h, 3–10 up to 6 h, 6–21 beyond).
+2. **Filters** them: direct or 1-stop flights (direct only within Spain), departing between 7 days and 6 months ahead, and a trip length that fits the distance (2–7 nights for flights up to 3 h, 3–10 up to 6 h, 6–21 beyond).
 3. **Remembers** every price it sees, so it learns what "normal" looks like for each route.
 4. **Decides** whether a fare is a deal, with stricter rules for short notice:
 
@@ -26,8 +26,9 @@ Example alert:
 
 ```
 ✈️ Deal · Bilbao → Rome (FCO)
-📅 Mon 14 Dec → Fri 18 Dec · 4 nights
-🛫 Direct both ways · FR
+🛫 Out: Mon 14 Dec, 06:35 · 2 h 25 min · direct
+🛬 Back: Fri 18 Dec, 21:10 · 2 h 30 min · direct
+🌙 4 nights · airline Ryanair
 💶 49 € per person · 98 € for 2
 📉 42% below usual (85 €)
 ⏳ Departs in 48 days

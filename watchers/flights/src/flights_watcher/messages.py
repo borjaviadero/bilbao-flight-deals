@@ -28,8 +28,12 @@ TEXTS: dict[Language, dict[str, str]] = {
     "en": {
         "nights": "{n} nights",
         "night": "1 night",
-        "direct": "Direct both ways",
-        "stops": "Stops: {out} out · {back} back",
+        "outbound": "Out",
+        "return": "Back",
+        "direct": "direct",
+        "stop": "1 stop",
+        "stops": "{n} stops",
+        "airline": "airline {name}",
         "per_person": "{price} € per person · {total} € for {n}",
         "drop": "{drop}% below usual ({usual} €)",
         "departs_in": "Departs in {days} days",
@@ -46,8 +50,12 @@ TEXTS: dict[Language, dict[str, str]] = {
     "es": {
         "nights": "{n} noches",
         "night": "1 noche",
-        "direct": "Directo ida y vuelta",
-        "stops": "Escalas: {out} ida · {back} vuelta",
+        "outbound": "Ida",
+        "return": "Vuelta",
+        "direct": "directo",
+        "stop": "1 escala",
+        "stops": "{n} escalas",
+        "airline": "aerolínea {name}",
         "per_person": "{price} € por persona · {total} € para {n}",
         "drop": "{drop}% por debajo de lo habitual ({usual} €)",
         "departs_in": "Sale dentro de {days} días",
@@ -77,7 +85,34 @@ def short_date(moment: datetime, language: Language) -> str:
     return f"{weekday} {moment.day} {month}"
 
 
+def clock(moment: datetime) -> str:
+    """``07:05``, in the local time of the airport (as given by the price source)."""
+    return f"{moment.hour:02d}:{moment.minute:02d}"
+
+
+def flight_time(minutes: int) -> str:
+    """``2 h 05 min`` / ``2 h`` / ``45 min``."""
+    hours, rest = divmod(minutes, 60)
+    if not hours:
+        return f"{rest} min"
+    return f"{hours} h {rest:02d} min" if rest else f"{hours} h"
+
+
+def leg(name: str, moment: datetime, minutes: int, stops: int, language: Language) -> str:
+    """``Ida: jue 10 dic, 08:00 · 2 h · directo``."""
+    t = TEXTS[language]
+    stops_text = (
+        t["direct"] if stops == 0 else t["stop"] if stops == 1 else t["stops"].format(n=stops)
+    )
+    parts = [f"{name}: {short_date(moment, language)}, {clock(moment)}"]
+    if minutes > 0:
+        parts.append(flight_time(minutes))
+    parts.append(stops_text)
+    return " · ".join(parts)
+
+
 CityNames = Mapping[str, str]  # IATA city code → name in the message language
+AirlineNames = Mapping[str, str]  # IATA airline code → name
 
 
 def destination(fare: Fare, names: CityNames) -> str:
@@ -101,6 +136,7 @@ def alert_message(
     config: FlightsInstanceConfig,
     language: Language,
     names: CityNames | None = None,
+    airlines: AirlineNames | None = None,
 ) -> str:
     """One deal, as a Telegram HTML message."""
     t = TEXTS[language]
@@ -110,16 +146,13 @@ def alert_message(
     label = config.window_named(opportunity.window).label_for(language)
 
     nights = t["night"] if fare.nights == 1 else t["nights"].format(n=fare.nights)
-    stops = (
-        t["direct"]
-        if fare.max_stops == 0
-        else t["stops"].format(out=fare.stops_out, back=fare.stops_back)
-    )
     lines = [
         f"<b>{escape(label)} · {escape(route(fare, names or {}))}</b>",
-        f"📅 {short_date(fare.departure_at, language)} → "
-        f"{short_date(fare.return_at, language)} · {nights}",
-        f"🛫 {escape(stops)} · {escape(fare.airline)}",
+        "🛫 "
+        + leg(t["outbound"], fare.departure_at, fare.outbound_minutes, fare.stops_out, language),
+        "🛬 " + leg(t["return"], fare.return_at, fare.return_minutes, fare.stops_back, language),
+        f"🌙 {nights} · "
+        + t["airline"].format(name=escape((airlines or {}).get(fare.airline, fare.airline))),
         "💶 "
         + t["per_person"].format(
             price=fmt(fare.price_per_person), total=fmt(fare.total_price(passengers)), n=passengers

@@ -30,6 +30,7 @@ BASE = Fare(
     stops_back=0,
     duration_minutes=240,
     outbound_minutes=120,
+    return_minutes=125,
     gate="g",
     link="https://example.test",
 )

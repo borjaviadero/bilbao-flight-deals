@@ -56,6 +56,8 @@ def api_and_telegram_transport(sent: list[dict[str, object]]):  # type: ignore[n
             return HttpResponse(200, b'{"ok": true}')
         if "/data/es/cities.json" in request.full_url:
             return HttpResponse(200, CITIES)
+        if "/data/en/airlines.json" in request.full_url:
+            return HttpResponse(200, b'[{"code": "W4", "name": "Wizz Air Malta"}]')
         return HttpResponse(200, FIXTURE.read_bytes())
 
     return transport
