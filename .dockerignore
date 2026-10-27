@@ -1,0 +1,25 @@
+# Keep the build context small and free of secrets and local state.
+# The Dockerfile only needs: pyproject.toml, uv.lock, core/, watchers/ and config/.
+
+.git
+.github
+.venv
+**/__pycache__
+**/*.py[cod]
+.mypy_cache
+.ruff_cache
+.pytest_cache
+
+# Secrets and local data must never reach an image
+.env
+*.env
+!.env.example
+data/
+*.sqlite3
+
+# Not needed to build or run
+docs/
+infra/
+**/tests/
+*.md
+!README.md

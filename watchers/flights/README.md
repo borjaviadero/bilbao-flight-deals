@@ -13,12 +13,13 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 | `places.py` | ✅ | City and airline names for the messages and city countries for filters, from the Travelpayouts `cities.json` and `airlines.json` data files (no token). Each cached 30 days in the history `cache` table; on failure the messages use codes. |
 | `runner.py` | ✅ | One complete run: search → warm-up or evaluate and plan → record prices → send (each alert logged once delivered) → finish. `dry_run` writes and sends nothing. |
 | `cli.py` | ✅ | `search` (read-only table) and `run [--dry-run] [--db PATH]`. |
-| `Dockerfile` | Phase 2 | Container image. |
+| `Dockerfile` | ✅ | Container image: two stages (uv installs the packages; the runtime stage has only the virtual environment, the configs and `tzdata`), non-root user, history in `/data`. |
 
 ## Layout
 
 ```
 watchers/flights/
+├── Dockerfile               # container image (build from the repository root)
 ├── pyproject.toml           # depends on dealhunter-core
 ├── src/flights_watcher/     # source code
 └── tests/                   # unit tests; fixtures/ holds a sample API response
@@ -33,3 +34,20 @@ make run                             # full run: records history and sends messa
 make search INSTANCE=flights-mad     # another instance
 uv run python -m flights_watcher --help
 ```
+
+## Docker
+
+```bash
+make docker-build                    # image flights-watcher:dev
+make docker-import-history           # once: copy data/dealhunter.sqlite3 into the volume
+make docker-dry-run                  # same as make dry-run, inside the container
+make docker-run                      # same as make run, inside the container
+```
+
+| Item | Value |
+|---|---|
+| Build context | Repository root (`docker build -f watchers/flights/Dockerfile .`): the image needs `core/` and `uv.lock` |
+| Default command | `run --config config/watchers/flights-bio.yaml`; any CLI arguments override it |
+| Secrets | Environment variables at run time (`--env-file .env` locally, a Kubernetes Secret later). Never in the image: `.dockerignore` excludes `.env` and `data/` |
+| History | `DEALHUNTER_DB_PATH=/data/dealhunter.sqlite3`; locally the named volume `dealhunter-data` |
+| User | `app` (UID 10001), not root |
