@@ -20,6 +20,12 @@
 - [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [x] Oracle Cloud Always Free account — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
 
+### Phase 2 checklist
+
+- [ ] Dockerfile for the flights watcher and `make docker-*` targets; same results as `make run`
+- [ ] GitHub Actions: `make check` on every pull request
+- [ ] GitHub Actions: image built for `amd64` and `arm64` and pushed to GHCR on every merge to `main`
+
 ### Phase 1 checklist
 
 - [x] Python workspace (uv), quality tooling (Ruff, mypy, pytest) and validated instance config

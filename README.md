@@ -91,6 +91,14 @@ make dry-run   # full run, prints the Telegram messages without sending or stori
 make run       # full run: records price history and sends alerts
 ```
 
+Or inside the Docker image:
+
+```bash
+make docker-build    # build the flights watcher image
+make docker-dry-run  # same dry run, in the container
+make docker-run      # same full run, in the container (history in a Docker volume)
+```
+
 Run `make help` to list all tasks.
 
 ## Repository layout
@@ -99,14 +107,14 @@ Run `make help` to list all tasks.
 .
 ├── config/watchers/   # One YAML file per watcher instance (e.g. flights-bio.yaml)
 ├── core/              # Python package dealhunter-core: config, price history, deal rules, notifier
-├── watchers/flights/  # Python package flights-watcher: fetches fares from the price API
+├── watchers/flights/  # Python package flights-watcher and its Dockerfile
 ├── infra/terraform/   # Cloud infrastructure (network, VM)
 ├── infra/k8s/         # Kubernetes manifests
 ├── docs/              # Architecture, roadmap, setup guides and price source notes
 └── .github/           # Pull request template (CI workflows later)
 ```
 
-Root files: `pyproject.toml` (uv workspace and tool settings), `uv.lock` (pinned dependency versions), `.python-version`, `Makefile` (common tasks), `.env.example` (required environment variables), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
+Root files: `pyproject.toml` (uv workspace and tool settings), `uv.lock` (pinned dependency versions), `.python-version`, `Makefile` (common tasks), `.env.example` (required environment variables), `.dockerignore` (files kept out of images), `.gitignore` (files never tracked), `.gitattributes` (LF line endings), `.editorconfig` (shared formatting), `CONTRIBUTING.md` (workflow and conventions), `LICENSE`.
 
 ## Contributing
 
