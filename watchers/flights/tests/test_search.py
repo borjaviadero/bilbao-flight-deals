@@ -39,6 +39,7 @@ def fare(days_ahead: int, price: str, *, stops: tuple[int, int] = (0, 0), **kw: 
         stops_out=stops[0],
         stops_back=stops[1],
         duration_minutes=240,
+        outbound_minutes=120,
         gate="g",
         link="https://example.test",
     )
@@ -97,3 +98,17 @@ def test_fetch_fares_queries_every_month_of_the_windows() -> None:
     ]
     # windows cover 7..180 days ahead: 2026-11-03 .. 2027-04-25
     assert months == ["2026-11", "2026-12", "2027-01", "2027-02", "2027-03", "2027-04"]
+
+
+def test_select_drops_trips_too_long_for_the_distance() -> None:
+    short_trip = fare(40, "30")  # 4 nights, 2 h flight: allowed (2-7)
+    too_long = replace(
+        fare(40, "25", destination_airport="VLC"), return_at=datetime(2026, 12, 27, 10, 0)
+    )  # 21 nights
+    long_haul = replace(
+        fare(40, "300", destination_airport="MEX"),
+        return_at=datetime(2026, 12, 20, 10, 0),
+        outbound_minutes=760,
+    )  # 14 n
+    result = select_candidates([short_trip, too_long, long_haul], config(), TODAY)
+    assert sorted(c.fare.destination_airport for c in result) == ["MEX", "MXP"]

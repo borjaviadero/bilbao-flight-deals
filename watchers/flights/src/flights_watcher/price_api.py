@@ -103,6 +103,7 @@ def _parse_fare(item: Mapping[str, Any], currency: str) -> Fare:
         stops_out=int(item.get("transfers", 0)),
         stops_back=int(item.get("return_transfers", 0)),
         duration_minutes=int(item.get("duration", 0)),
+        outbound_minutes=int(item.get("duration_to") or int(item.get("duration", 0)) // 2),
         gate=str(item.get("gate", "")),
         link=f"{BOOKING_BASE_URL}{link}" if link.startswith("/") else link,
     )

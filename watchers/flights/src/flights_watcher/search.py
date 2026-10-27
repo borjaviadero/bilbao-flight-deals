@@ -58,7 +58,8 @@ def select_candidates(
 ) -> list[Candidate]:
     """Keep fares that fit the search and fall into a deal window.
 
-    Drops fares with too many stops or outside every window, removes duplicates
+    Drops fares with too many stops, a trip length that does not fit the flight
+    time, or a departure outside every window; removes duplicates
     (same route, dates and carrier) keeping the cheapest, and sorts by price.
     """
     best: dict[str, Candidate] = {}
@@ -66,6 +67,8 @@ def select_candidates(
         if fare.origin_airport != config.search.origin:
             continue
         if fare.max_stops > config.search.max_stops:
+            continue
+        if not config.search.nights_allowed(fare.outbound_minutes, fare.nights):
             continue
         days = fare.days_ahead(today)
         window = config.window_for(days)

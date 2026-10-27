@@ -5,7 +5,7 @@ Messages use Telegram's HTML mode, so every dynamic value is escaped.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from html import escape
 
@@ -34,6 +34,7 @@ TEXTS: dict[Language, dict[str, str]] = {
         "drop": "{drop}% below usual ({usual} €)",
         "departs_in": "Departs in {days} days",
         "view": "View flight",
+        "indicative": "🔎 Indicative price from recent searches: check it before buying.",
         "summary_title": "📋 {n} more deals this run",
         "summary_title_one": "📋 1 more deal this run",
         "start_title": "👋 Now watching flights from {origin}",
@@ -51,6 +52,9 @@ TEXTS: dict[Language, dict[str, str]] = {
         "drop": "{drop}% por debajo de lo habitual ({usual} €)",
         "departs_in": "Sale dentro de {days} días",
         "view": "Ver vuelo",
+        "indicative": (
+            "🔎 Precio orientativo de búsquedas recientes: compruébalo antes de comprar."
+        ),
         "summary_title": "📋 {n} chollos más en esta búsqueda",
         "summary_title_one": "📋 1 chollo más en esta búsqueda",
         "start_title": "👋 Empiezo a vigilar vuelos desde {origin}",
@@ -73,16 +77,30 @@ def short_date(moment: datetime, language: Language) -> str:
     return f"{weekday} {moment.day} {month}"
 
 
-def route(fare: Fare) -> str:
-    """``BIO → MXP (MIL)``; the city code is shown when it differs from the airport."""
-    destination = fare.destination_airport
-    if fare.destination_city and fare.destination_city != destination:
-        destination += f" ({fare.destination_city})"
-    return f"{fare.origin_airport} → {destination}"
+CityNames = Mapping[str, str]  # IATA city code → name in the message language
+
+
+def destination(fare: Fare, names: CityNames) -> str:
+    """``Milán (MXP)``; without a known name, ``MXP (MIL)``."""
+    name = names.get(fare.destination_city) or names.get(fare.destination_airport)
+    if name:
+        return f"{name} ({fare.destination_airport})"
+    if fare.destination_city and fare.destination_city != fare.destination_airport:
+        return f"{fare.destination_airport} ({fare.destination_city})"
+    return fare.destination_airport
+
+
+def route(fare: Fare, names: CityNames) -> str:
+    """``Bilbao → Milán (MXP)``."""
+    origin = names.get(fare.origin_airport, fare.origin_airport)
+    return f"{origin} → {destination(fare, names)}"
 
 
 def alert_message(
-    opportunity: Opportunity[Candidate], config: FlightsInstanceConfig, language: Language
+    opportunity: Opportunity[Candidate],
+    config: FlightsInstanceConfig,
+    language: Language,
+    names: CityNames | None = None,
 ) -> str:
     """One deal, as a Telegram HTML message."""
     t = TEXTS[language]
@@ -98,7 +116,7 @@ def alert_message(
         else t["stops"].format(out=fare.stops_out, back=fare.stops_back)
     )
     lines = [
-        f"<b>{escape(label)} · {escape(route(fare))}</b>",
+        f"<b>{escape(label)} · {escape(route(fare, names or {}))}</b>",
         f"📅 {short_date(fare.departure_at, language)} → "
         f"{short_date(fare.return_at, language)} · {nights}",
         f"🛫 {escape(stops)} · {escape(fare.airline)}",
@@ -114,27 +132,32 @@ def alert_message(
             + t["drop"].format(drop=fmt(evaluation.drop_percent), usual=fmt(evaluation.usual_price))
         )
     lines.append("⏳ " + t["departs_in"].format(days=candidate.days_ahead))
+    lines.append(t["indicative"])
     lines.append(f'<a href="{escape(fare.link, quote=True)}">{t["view"]}</a>')
     return "\n".join(lines)
 
 
-def summary_line(candidate: Candidate, language: Language) -> str:
+def summary_line(candidate: Candidate, language: Language, names: CityNames) -> str:
     """Compact one-line version of a deal, with a link."""
     fare = candidate.fare
     text = (
-        f"{escape(fare.destination_airport)} · {short_date(fare.departure_at, language)} → "
+        f"{escape(destination(fare, names))} · {short_date(fare.departure_at, language)} → "
         f"{short_date(fare.return_at, language)} · {fmt(fare.price_per_person)} €"
     )
     return f'• <a href="{escape(fare.link, quote=True)}">{text}</a>'
 
 
-def summary_message(opportunities: Sequence[Opportunity[Candidate]], language: Language) -> str:
+def summary_message(
+    opportunities: Sequence[Opportunity[Candidate]],
+    language: Language,
+    names: CityNames | None = None,
+) -> str:
     """The deals that did not fit in the per-run cap, in one message."""
     t = TEXTS[language]
     count = len(opportunities)
     title = t["summary_title_one"] if count == 1 else t["summary_title"].format(n=count)
     lines = [f"<b>{title}</b>"]
-    lines += [summary_line(o.item, language) for o in opportunities]
+    lines += [summary_line(o.item, language, names or {}) for o in opportunities]
     return _truncate("\n".join(lines))
 
 
@@ -143,13 +166,16 @@ def start_message(
     candidates: Sequence[Candidate],
     recorded: int,
     language: Language,
+    names: CityNames | None = None,
     *,
     top: int = 5,
 ) -> str:
     """Warm-up run: say what is being watched and show the cheapest fares."""
     t = TEXTS[language]
+    known = names or {}
+    origin = known.get(config.search.origin, config.search.origin)
     lines = [
-        f"<b>{t['start_title'].format(origin=escape(config.search.origin))}</b>",
+        f"<b>{t['start_title'].format(origin=escape(origin))}</b>",
         t["start_scope"].format(
             days_min=config.min_days_ahead,
             days_max=config.max_days_ahead,
@@ -160,7 +186,7 @@ def start_message(
     ]
     if candidates:
         lines.append(t["start_top"])
-        lines += [summary_line(c, language) for c in candidates[:top]]
+        lines += [summary_line(c, language, known) for c in candidates[:top]]
     else:
         lines.append(t["start_none"])
     return _truncate("\n".join(lines))
