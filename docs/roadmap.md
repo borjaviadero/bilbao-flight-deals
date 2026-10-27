@@ -20,6 +20,14 @@
 - [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [x] Oracle Cloud Always Free account — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
 
+### Phase 1 checklist
+
+- [x] Python workspace (uv), quality tooling (Ruff, mypy, pytest) and validated instance config
+- [ ] Price API client and filters
+- [ ] Price history (SQLite) and deal rules
+- [ ] Telegram notifier and CLI (with dry-run)
+- [ ] First real deal alert on Telegram
+
 ## Future
 
 | Version | Adds |

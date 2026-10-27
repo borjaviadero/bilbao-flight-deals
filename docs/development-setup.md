@@ -7,13 +7,15 @@ Tools needed to work on this project locally. The reference environment is **WSL
 | Tool | Used for | Phase | Reference version |
 |---|---|---|---|
 | Git | Version control | All | 2.34 |
-| Python 3 + `venv` + `pip` | Writing and running watchers locally | 1 | 3.10 (system) — images will ship a current Python |
+| [uv](https://docs.astral.sh/uv/) | Python version, virtual environment and dependency manager | 1 | 0.11 |
+| Python | Managed by uv from `.python-version` (the system Python is not used) | 1 | 3.13 |
+| `make` | Runs the tasks in the `Makefile` | 1 | 4.3 |
 | Docker Engine | Building and running images | 1–2 | 29.9 |
 | Docker Buildx | Multi-arch builds (`linux/arm64` for the server) | 2 | 0.38 |
 | Docker Compose | Running watcher + database locally | 1–2 | 5.6 |
 | Terraform | Provisioning Oracle Cloud | 3 | 1.17 |
 | kubectl | Managing the k3s cluster | 4 | 1.36 (works with clusters 1.35–1.37) |
-| `curl`, `jq`, `make`, `unzip` | Scripting and API checks | All | — |
+| `curl`, `jq`, `unzip` | Scripting and API checks | All | — |
 
 Reference versions are the ones the project was set up with (October 2026). Newer patch releases are fine.
 
@@ -52,6 +54,16 @@ sudo systemctl enable --now docker.socket
 sudo systemctl enable --now docker.service
 ```
 
+### uv and Python
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh   # installs uv in ~/.local/bin
+exec $SHELL -l                                     # reload PATH
+uv --version
+```
+
+`make install` (`uv sync`) then downloads Python 3.13 if needed, creates `.venv/` and installs every workspace package with the exact versions pinned in `uv.lock`.
+
 ## Verify
 
 ```bash
@@ -60,7 +72,8 @@ docker compose version
 docker buildx version
 terraform version
 kubectl version --client
-python3 --version
+uv run python --version   # → Python 3.13.x
+make check
 ```
 
 ## Configure

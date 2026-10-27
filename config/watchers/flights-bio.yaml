@@ -15,10 +15,9 @@ search:
   passengers: 2
   currency: EUR
   trip_length_nights: any
-  max_stops: 1                 # direct or 1 stop (e.g. BIO → DUB → HER)
-  layover_minutes:
-    min: 90
-    max: 720
+  max_stops: 1                 # direct or 1 stop on each leg (e.g. BIO → DUB → HER)
+  # Layover duration and separate-ticket detection are not available from the
+  # current price source, so they are not configurable (see docs/price-source.md).
 
 # Each window covers a range of departure dates and has its own deal rules.
 # Prices from the API are per adult; per-person rules compare against that price.
@@ -47,7 +46,6 @@ deal_windows:
 
 alerts:
   repeat_only_if_lower: true   # don't re-alert the same flight unless the price drops further
-  flag_separate_tickets: true  # warn when a 1-stop trip is two separate bookings
   weekly_summary: sunday
 
 telegram:

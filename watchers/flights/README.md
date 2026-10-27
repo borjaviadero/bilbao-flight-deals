@@ -1,5 +1,20 @@
-# flights watcher
+# flights watcher — `flights-watcher`
 
-Fetches round-trip fares from the price API, applies the filters from an instance config (for example [`flights-bio.yaml`](../../config/watchers/flights-bio.yaml)) and hands the results to `core`.
+Looks for round-trip flight deals for one instance config (for example [`flights-bio.yaml`](../../config/watchers/flights-bio.yaml)) and reports them through `dealhunter-core`.
 
-Planned for **Phase 1** (code) and **Phase 2** (Dockerfile).
+| Module | Status | What it does |
+|---|---|---|
+| `config.py` | ✅ | Adds the flights `search` section (origin, destinations, passengers, currency, max stops) to the shared instance config. |
+| Price API client | Phase 1 | Fetches fares from the Travelpayouts / Aviasales Data API. |
+| Filters | Phase 1 | Applies max stops and the departure range of the deal windows. |
+| CLI | Phase 1 | Runs one search for an instance. |
+| `Dockerfile` | Phase 2 | Container image. |
+
+## Layout
+
+```
+watchers/flights/
+├── pyproject.toml           # depends on dealhunter-core
+├── src/flights_watcher/     # source code
+└── tests/                   # unit tests, including validation of every config/watchers/flights-*.yaml
+```

@@ -17,6 +17,7 @@ Aviasales is a metasearch engine: prices come from many airlines and agencies, a
 - **Per adult.** Multiply by the number of passengers for the trip total.
 - **Not exhaustive.** Popular routes and near dates are well covered; rare routes and far dates are sparse.
 - **Links are relative.** Prepend `https://www.aviasales.com` to the `link` field.
+- **Stops, not layovers.** The response gives the number of stops per leg (`transfers`, `return_transfers`) but not layover durations or whether a 1-stop trip is two separate tickets. The watcher therefore filters by number of stops only.
 
 ## Account and token
 
