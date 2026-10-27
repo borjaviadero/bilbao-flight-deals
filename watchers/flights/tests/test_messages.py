@@ -13,6 +13,7 @@ from flights_watcher.config import FlightsInstanceConfig, load_config
 from flights_watcher.messages import (
     _truncate,
     alert_message,
+    date_range,
     flight_time,
     leg,
     short_date,
@@ -102,13 +103,25 @@ def test_values_are_escaped() -> None:
 
 def test_summary_message() -> None:
     text = summary_message(
-        [opportunity(), opportunity(destination_airport="STN", destination_city="LON")], "es", NAMES
+        [
+            opportunity(drop="33.4"),
+            opportunity(destination_airport="STN", destination_city="LON", stops_out=1),
+        ],
+        "es",
+        NAMES,
+        max_alerts=20,
     )
     lines = text.splitlines()
-    assert lines[0] == "<b>📋 2 chollos más en esta búsqueda</b>"
-    assert "Milán (MXP) · jue 10 dic → lun 14 dic · 30 €" in lines[1]
-    assert "STN (LON) · jue 10 dic" in lines[2]  # unknown city: codes
-    assert summary_message([opportunity()], "es").startswith("<b>📋 1 chollo más en")
+    assert lines[0] == "<b>📋 2 chollos más (no cabían en los 20 avisos)</b>"
+    assert "Milán (MXP) · 10-14 dic · 4 noches · 30 €/pers. · -33% · directo</a>" in lines[1]
+    assert "STN (LON) · 10-14 dic · 4 noches · 30 €/pers. · con escalas</a>" in lines[2]
+    one = summary_message([opportunity()], "es", max_alerts=5)
+    assert one.startswith("<b>📋 1 chollo más (no cabía en los 5 avisos)</b>")
+
+
+def test_date_range() -> None:
+    assert date_range(datetime(2027, 3, 1), datetime(2027, 3, 8), "es") == "1-8 mar"
+    assert date_range(datetime(2027, 2, 27), datetime(2027, 3, 6), "es") == "27 feb - 6 mar"
 
 
 def test_start_message() -> None:
@@ -117,7 +130,7 @@ def test_start_message() -> None:
     assert "Empiezo a vigilar vuelos desde Bilbao" in text
     assert "de 7 a 180 días vista, máx. 1 escala(s)" in text
     assert "194 precios guardados" in text
-    assert "Milán (MXP) · jue 10 dic" in text
+    assert "Milán (MXP) · 10-14 dic · 4 noches · 30 €/pers." in text
     assert "ningún vuelo" in start_message(config(), [], recorded=0, language="es")
 
 

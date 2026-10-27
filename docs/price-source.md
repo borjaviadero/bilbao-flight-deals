@@ -65,7 +65,7 @@ Relevant response fields:
 
 ## Rate limits
 
-`/v3/prices_for_dates` allows **600 requests per minute**; exceeding a limit returns HTTP `429`. The watcher makes a few requests every 6 hours, far below the limit.
+`/v3/prices_for_dates` allows **600 requests per minute**; exceeding a limit returns HTTP `429`. The watcher makes a few requests twice a day, far below the limit.
 
 ## Coverage from Bilbao
 

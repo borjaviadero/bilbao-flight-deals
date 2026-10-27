@@ -6,7 +6,7 @@ watcher: flights
 instance: flights-bio
 enabled: true
 
-schedule: "0 */6 * * *"        # every 6 hours (cron)
+schedule: "0 9,21 * * *"       # 09:00 and 21:00, Europe/Madrid (cron; used from Phase 4)
 
 search:
   origin: BIO                  # Bilbao airport (IATA code)
@@ -65,7 +65,7 @@ deal_windows:
 
 alerts:
   repeat_only_if_lower: true   # don't re-alert the same flight unless the price drops further
-  max_per_run: 5               # best 5 deals as alerts; the rest in one summary message
+  max_per_run: 20              # safety cap: best 20 deals as alerts, any others in one summary
   warmup_first_run: true       # first run: record prices, send only a "watching" message
   weekly_summary: sunday
 

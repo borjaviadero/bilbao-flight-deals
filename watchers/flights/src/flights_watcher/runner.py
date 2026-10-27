@@ -17,6 +17,7 @@ messages are returned so they can be printed.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, tzinfo
@@ -31,6 +32,9 @@ from flights_watcher.models import Candidate
 from flights_watcher.places import airline_names, city_countries, city_names
 from flights_watcher.price_api import TravelpayoutsClient
 from flights_watcher.search import fetch_fares, select_candidates
+
+# Telegram allows about 20 messages per minute in one group: keep well under it.
+SEND_INTERVAL_SECONDS = 3.0
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +65,7 @@ def run_instance(
     http: JsonHttpClient | None = None,
     timezone: tzinfo,
     dry_run: bool = False,
+    pause: Callable[[float], None] = time.sleep,
 ) -> RunReport:
     """Execute one run. ``now`` must be timezone-aware."""
     instance = config.instance
@@ -99,7 +104,9 @@ def run_instance(
         report.skipped_repeats = len(plan.skipped)
         report.messages += [alert_message(o, config, language, names, airlines) for o in plan.send]
         if plan.summary:
-            report.messages.append(summary_message(plan.summary, language, names))
+            report.messages.append(
+                summary_message(plan.summary, language, names, max_alerts=config.alerts.max_per_run)
+            )
 
     if dry_run:
         report.alerts_sent = len(plan.send)
@@ -108,13 +115,22 @@ def run_instance(
 
     history.record(instance, to_observations(candidates), now)
 
+    delivered = 0
+
+    def deliver(text: str) -> None:
+        nonlocal delivered
+        if delivered:
+            pause(SEND_INTERVAL_SECONDS)
+        send(text)
+        delivered += 1
+
     alert_messages = report.messages[: len(plan.send)]
     for opportunity, text in zip(plan.send, alert_messages, strict=True):
-        send(text)
+        deliver(text)
         _log_alert(history, instance, opportunity, now)
         report.alerts_sent += 1
     for text in report.messages[len(plan.send) :]:  # summary or start message
-        send(text)
+        deliver(text)
     for opportunity in plan.summary:  # announced in the summary: do not repeat them
         _log_alert(history, instance, opportunity, now)
     report.in_summary = len(plan.summary)

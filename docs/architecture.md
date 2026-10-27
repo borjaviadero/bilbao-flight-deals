@@ -29,7 +29,7 @@ sequenceDiagram
     W->>W: is it a deal? (rules of its deal window)
     W->>DB: store prices
     alt new deal (or lower than last alert)
-        W->>TG: send up to 5 alerts, the rest in one summary
+        W->>TG: send up to 20 alerts (3 s apart), the rest in one summary
         W->>DB: remember alerts
     end
 ```
@@ -65,4 +65,4 @@ flowchart LR
 - **Deal windows.** Each instance defines windows of departure dates with their own rules (e.g. regular 30–180 days, last minute 7–29 days with stricter thresholds).
 - **Usual price.** Median of the route's prices seen in the last 30 days (needs at least 5). The median ignores one-off outliers better than the mean. A price is compared with the history *before* it is recorded.
 - **Cold start.** The first run is a warm-up: it records prices and only sends a start message. Until a route has enough history, the per-person price rules do most of the work.
-- **Alert volume.** One alert per flight, at most 5 per run (best drop first, then cheapest); the rest go in a single summary message. An item is not alerted again unless its price drops further.
+- **Alert volume.** One alert per flight, at most 20 per run as a safety cap (best drop first, then cheapest); any others go in a single summary message. Messages are sent 3 seconds apart to stay under Telegram's limit of about 20 messages per minute in a group. An item is not alerted again unless its price drops further.
