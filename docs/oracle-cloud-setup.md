@@ -36,3 +36,29 @@ During the 30-day trial the account has credits and can create paid resources. T
 | Object storage | 20 GB |
 
 Creating Ampere A1 instances can fail with *Out of host capacity* when the region is busy; the fix is to retry later. This is handled in Phase 3.
+
+## API key for Terraform (Phase 3)
+
+Terraform authenticates as your user with an **API signing key**: a key pair whose private half stays in WSL and whose public half is uploaded to OCI. This is identity setup, not a resource, so it is done once by hand.
+
+```bash
+mkdir -p ~/.oci && chmod 700 ~/.oci
+openssl genrsa -out ~/.oci/oci_api_key.pem 4096
+chmod 600 ~/.oci/oci_api_key.pem
+openssl rsa -pubout -in ~/.oci/oci_api_key.pem -out ~/.oci/oci_api_key_public.pem
+cat ~/.oci/oci_api_key_public.pem    # the PUBLIC key: safe to copy
+```
+
+1. OCI console → profile icon (top right) → **User settings** (or *My profile*) → **Tokens and keys** / **API keys** → **Add API key**.
+2. Choose **Paste a public key**, paste the contents of `oci_api_key_public.pem` → **Add**.
+3. The console shows a **configuration file preview** (user, fingerprint, tenancy, region). Save it as `~/.oci/config` and set `key_file=~/.oci/oci_api_key.pem`; then `chmod 600 ~/.oci/config`.
+
+> The private key (`oci_api_key.pem`) gives full access to the account as your user. It never leaves `~/.oci/`: not in the repo, chat, screenshots or backups shared with others. If it leaks, delete the API key in the console and create a new one.
+
+An SSH key pair is also needed to log in to the VM:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/oci_dealhunter -C bilbao-flight-deals
+```
+
+Terraform uploads only the public half (`~/.ssh/oci_dealhunter.pub`).

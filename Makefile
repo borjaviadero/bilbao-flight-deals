@@ -1,7 +1,8 @@
 # Common development tasks. Run `make help` to list them.
 .DEFAULT_GOAL := help
 .PHONY: help install lint format typecheck test check search dry-run run \
-	docker-build docker-dry-run docker-run docker-import-history
+	docker-build docker-dry-run docker-run docker-import-history \
+	tf-fmt tf-bootstrap-init tf-bootstrap-plan tf-bootstrap-apply
 
 help:  ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-22s %s\n", $$1, $$2}'
@@ -65,3 +66,20 @@ docker-import-history:  ## Copy data/dealhunter.sqlite3 into the Docker volume (
 	@test -f data/dealhunter.sqlite3 || { echo "No local history in data/"; exit 1; }
 	docker run --rm -v $(VOLUME):/data -v "$(CURDIR)/data:/src:ro" --entrypoint cp \
 		$(IMAGE) /src/dealhunter.sqlite3 /data/dealhunter.sqlite3
+
+# --- Terraform (Phase 3) ----------------------------------------------------------
+# Credentials come from ~/.oci/config; inputs from terraform.tfvars (ignored by Git).
+
+TF_BOOTSTRAP = terraform -chdir=infra/terraform/bootstrap
+
+tf-fmt:  ## Format every Terraform file
+	terraform fmt -recursive infra/terraform
+
+tf-bootstrap-init:  ## Download the OCI provider for the bootstrap stack
+	$(TF_BOOTSTRAP) init
+
+tf-bootstrap-plan:  ## Show what the bootstrap stack would create (changes nothing)
+	$(TF_BOOTSTRAP) plan
+
+tf-bootstrap-apply:  ## Create the compartment, state bucket and budget (asks to confirm)
+	$(TF_BOOTSTRAP) apply

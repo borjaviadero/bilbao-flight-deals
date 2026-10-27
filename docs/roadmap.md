@@ -20,6 +20,13 @@
 - [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [x] Oracle Cloud Always Free account — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
 
+### Phase 3 checklist
+
+- [ ] OCI API key and SSH key in WSL — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
+- [ ] Bootstrap stack: compartment, state bucket, budget alert
+- [ ] Main stack: network and ARM VM (2 OCPU / 12 GB), state in the bucket
+- [ ] SSH into the VM
+
 ### Phase 2 checklist
 
 - [x] Dockerfile for the flights watcher and `make docker-*` targets; same results as `make run`
