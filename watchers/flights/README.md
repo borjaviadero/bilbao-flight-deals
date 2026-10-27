@@ -10,7 +10,7 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 | `search.py` | ✅ | `fetch_fares`: one request per departure month covered by the deal windows. `select_candidates`: max stops on either leg, trip length for the flight time, deal window by days ahead, de-duplication (cheapest per route, dates and carrier), sorted by price. |
 | `deals.py` | ✅ | Flights keys for the history (`route_key` = origin-destination airports), observations from candidates, and `find_opportunities` (evaluates each candidate against its window, using the route's usual price). |
 | `messages.py` | ✅ | Telegram texts in English and Spanish (HTML, escaped): deal alert (departure time, flight time and stops per leg; a note that the price is indicative), summary of the rest, warm-up start message. Destinations shown as `Milán (MXP)`, falling back to codes. |
-| `places.py` | ✅ | City names for the messages, from the Travelpayouts `cities.json` data file (no token). Cached 30 days in the history `cache` table; on failure the messages use codes. |
+| `places.py` | ✅ | City and airline names for the messages, from the Travelpayouts `cities.json` and `airlines.json` data files (no token). Each cached 30 days in the history `cache` table; on failure the messages use codes. |
 | `runner.py` | ✅ | One complete run: search → warm-up or evaluate and plan → record prices → send (each alert logged once delivered) → finish. `dry_run` writes and sends nothing. |
 | `cli.py` | ✅ | `search` (read-only table) and `run [--dry-run] [--db PATH]`. |
 | `Dockerfile` | Phase 2 | Container image. |

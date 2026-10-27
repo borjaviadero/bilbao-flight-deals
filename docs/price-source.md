@@ -21,6 +21,7 @@ Aviasales is a metasearch engine: prices come from many airlines and agencies, a
 - **Times.** `departure_at` and `return_at` include the departure time, in the local time of each departure airport (with its UTC offset).
 - **Flight time.** `duration_to` and `duration_back` are the flight time of each leg in minutes, layovers included (`duration` is both legs). The watcher uses it as a proxy for distance to choose the allowed trip length.
 - **City names.** The free data file `https://api.travelpayouts.com/data/{language}/cities.json` (no token) maps IATA city codes to names. It is downloaded at most every 30 days and cached in the history database. Some names are official rather than everyday (`BIO` is "Ciudad de Bilbao" in Spanish), so `search.city_names` in the instance config can override them.
+- **Airline names.** `https://api.travelpayouts.com/data/en/airlines.json` maps airline codes (`V7`) to names (`Volotea`), cached the same way. The `airline` field of a fare is a single carrier, even when the return is flown by another airline.
 
 ## Account and token
 

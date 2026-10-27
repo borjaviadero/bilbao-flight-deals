@@ -28,7 +28,7 @@ from flights_watcher.config import FlightsInstanceConfig
 from flights_watcher.deals import find_opportunities, to_observations
 from flights_watcher.messages import alert_message, start_message, summary_message
 from flights_watcher.models import Candidate
-from flights_watcher.places import city_names
+from flights_watcher.places import airline_names, city_names
 from flights_watcher.price_api import TravelpayoutsClient
 from flights_watcher.search import fetch_fares, select_candidates
 
@@ -77,6 +77,7 @@ def run_instance(
         city_names(http, history, language, now, store=not dry_run) if http is not None else {}
     )
     names = {**downloaded, **config.search.city_names}
+    airlines = airline_names(http, history, now, store=not dry_run) if http is not None else {}
 
     plan: AlertPlan[Candidate] = AlertPlan(send=[], summary=[], skipped=[])
     if warmup:
@@ -91,7 +92,7 @@ def run_instance(
         )
         report.deals = len(opportunities)
         report.skipped_repeats = len(plan.skipped)
-        report.messages += [alert_message(o, config, language, names) for o in plan.send]
+        report.messages += [alert_message(o, config, language, names, airlines) for o in plan.send]
         if plan.summary:
             report.messages.append(summary_message(plan.summary, language, names))
 

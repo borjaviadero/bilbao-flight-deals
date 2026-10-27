@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 from dealhunter_core.history import PriceHistory
 from dealhunter_core.http import HttpResponse, JsonHttpClient
-from flights_watcher.places import city_names, parse_cities
+from flights_watcher.places import airline_names, city_names, parse_airlines, parse_cities
 
 NOW = datetime(2026, 10, 27, 12, tzinfo=UTC)
 CITIES = [{"code": "MIL", "name": "Milán"}, {"code": "VLC", "name": "Valencia"}, {"code": "X"}]
@@ -49,3 +49,25 @@ def test_dry_run_does_not_store() -> None:
     with PriceHistory.in_memory() as h:
         city_names(client, h, "es", NOW, store=False)
         assert h.cached("cities:es", max_age=timedelta(days=30), now=NOW) is None
+
+
+AIRLINES = [
+    {"code": "V7", "name": "Volotea"},
+    {"code": "VY", "name": None, "name_translations": {"en": "Vueling"}},
+    {"code": "XX", "name": None},
+]
+
+
+def test_parse_airlines() -> None:
+    assert parse_airlines(AIRLINES) == {"V7": "Volotea", "VY": "Vueling"}
+    assert parse_airlines("nope") == {}
+
+
+def test_airline_names_are_cached_separately() -> None:
+    calls: list[str] = []
+    client = http([HttpResponse(200, json.dumps(AIRLINES).encode())], calls)
+    with PriceHistory.in_memory() as h:
+        assert airline_names(client, h, NOW)["V7"] == "Volotea"
+        assert airline_names(client, h, NOW)["VY"] == "Vueling"
+        assert h.cached("cities:es", max_age=timedelta(days=30), now=NOW) is None
+    assert calls == ["https://api.travelpayouts.com/data/en/airlines.json"]

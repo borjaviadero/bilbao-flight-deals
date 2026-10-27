@@ -28,7 +28,7 @@ Example alert:
 ✈️ Deal · Bilbao → Rome (FCO)
 🛫 Out: Mon 14 Dec, 06:35 · 2 h 25 min · direct
 🛬 Back: Fri 18 Dec, 21:10 · 2 h 30 min · direct
-🌙 4 nights · airline FR
+🌙 4 nights · airline Ryanair
 💶 49 € per person · 98 € for 2
 📉 42% below usual (85 €)
 ⏳ Departs in 48 days

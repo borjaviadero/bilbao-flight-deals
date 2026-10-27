@@ -33,7 +33,7 @@ TEXTS: dict[Language, dict[str, str]] = {
         "direct": "direct",
         "stop": "1 stop",
         "stops": "{n} stops",
-        "airline": "airline {code}",
+        "airline": "airline {name}",
         "per_person": "{price} € per person · {total} € for {n}",
         "drop": "{drop}% below usual ({usual} €)",
         "departs_in": "Departs in {days} days",
@@ -55,7 +55,7 @@ TEXTS: dict[Language, dict[str, str]] = {
         "direct": "directo",
         "stop": "1 escala",
         "stops": "{n} escalas",
-        "airline": "aerolínea {code}",
+        "airline": "aerolínea {name}",
         "per_person": "{price} € por persona · {total} € para {n}",
         "drop": "{drop}% por debajo de lo habitual ({usual} €)",
         "departs_in": "Sale dentro de {days} días",
@@ -112,6 +112,7 @@ def leg(name: str, moment: datetime, minutes: int, stops: int, language: Languag
 
 
 CityNames = Mapping[str, str]  # IATA city code → name in the message language
+AirlineNames = Mapping[str, str]  # IATA airline code → name
 
 
 def destination(fare: Fare, names: CityNames) -> str:
@@ -135,6 +136,7 @@ def alert_message(
     config: FlightsInstanceConfig,
     language: Language,
     names: CityNames | None = None,
+    airlines: AirlineNames | None = None,
 ) -> str:
     """One deal, as a Telegram HTML message."""
     t = TEXTS[language]
@@ -149,7 +151,8 @@ def alert_message(
         "🛫 "
         + leg(t["outbound"], fare.departure_at, fare.outbound_minutes, fare.stops_out, language),
         "🛬 " + leg(t["return"], fare.return_at, fare.return_minutes, fare.stops_back, language),
-        f"🌙 {nights} · " + t["airline"].format(code=escape(fare.airline)),
+        f"🌙 {nights} · "
+        + t["airline"].format(name=escape((airlines or {}).get(fare.airline, fare.airline))),
         "💶 "
         + t["per_person"].format(
             price=fmt(fare.price_per_person), total=fmt(fare.total_price(passengers)), n=passengers

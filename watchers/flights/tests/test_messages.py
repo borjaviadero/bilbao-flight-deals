@@ -72,12 +72,12 @@ NAMES = {"BIO": "Bilbao", "MIL": "Milán"}
 
 
 def test_alert_message_spanish() -> None:
-    text = alert_message(opportunity(drop="70"), config(), "es", NAMES)
+    text = alert_message(opportunity(drop="70"), config(), "es", NAMES, {"VY": "Vueling"})
     assert text.splitlines() == [
         "<b>✈️ Chollo · Bilbao → Milán (MXP)</b>",
         "🛫 Ida: jue 10 dic, 08:00 · 2 h · directo",
         "🛬 Vuelta: lun 14 dic, 20:00 · 2 h 05 min · directo",
-        "🌙 4 noches · aerolínea VY",
+        "🌙 4 noches · aerolínea Vueling",
         "💶 30 € por persona · 60 € para 2",
         "📉 70% por debajo de lo habitual (100 €)",
         "⏳ Sale dentro de 44 días",
@@ -145,3 +145,8 @@ def test_flight_time_and_leg() -> None:
     assert leg("Ida", datetime(2026, 12, 10, 7, 5), 400, 2, "es") == (
         "Ida: jue 10 dic, 07:05 · 6 h 40 min · 2 escalas"
     )
+
+
+def test_unknown_airline_keeps_the_code() -> None:
+    text = alert_message(opportunity(), config(), "es", NAMES, {"V7": "Volotea"})
+    assert "🌙 4 noches · aerolínea VY" in text
