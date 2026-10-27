@@ -20,7 +20,7 @@ It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestr
    | 30 days – 6 months | ≥ 30% below usual **or** < €60 per person | ✈️ Deal |
    | 7 – 29 days | ≥ 50% below usual **or** ≤ €30 per person | ⚡ Super deal · last minute |
 5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
-6. **Summarises** the best fares every Sunday.
+6. **Summarises** the best fares every Sunday (planned).
 
 Example alert:
 

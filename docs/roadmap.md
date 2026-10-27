@@ -5,8 +5,8 @@
 | Phase | Goal | Done when | Status |
 |---|---|---|---|
 | 0. Setup | Repo conventions, local tools, Telegram bot, cloud and API accounts | Every item in the checklist below is ticked | ✅ Done |
-| 1. Local watcher | Flights watcher runs locally | First real deal alert arrives on Telegram | 🚧 Next |
-| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | ⏳ |
+| 1. Local watcher | Flights watcher runs locally | First real deal alert arrives on Telegram | ✅ Done |
+| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | 🚧 Next |
 | 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | ⏳ |
 | 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on | ⏳ |
 | 5. Automation & ops | CI/CD, backups, monitoring | A merge to `main` deploys itself; alerts if something breaks | ⏳ |
@@ -26,7 +26,9 @@
 - [x] Price API client and filters (`make search`)
 - [x] Price history (SQLite) and deal rules
 - [x] Telegram notifier and `run` command (with dry-run)
-- [ ] First real deal alert on Telegram
+- [x] First real deal alert on Telegram (27 Oct 2026: 5 alerts in the Bilbao topic)
+
+Until Phase 4 the watcher runs only when started by hand (`make run`); the `schedule` in each instance config is used by the Kubernetes CronJob. The weekly summary (`alerts.weekly_summary`) is planned for Phase 5.
 
 ## Future
 
