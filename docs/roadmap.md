@@ -25,7 +25,7 @@
 - [x] Python workspace (uv), quality tooling (Ruff, mypy, pytest) and validated instance config
 - [x] Price API client and filters (`make search`)
 - [x] Price history (SQLite) and deal rules
-- [ ] Telegram notifier and CLI (with dry-run)
+- [x] Telegram notifier and `run` command (with dry-run)
 - [ ] First real deal alert on Telegram
 
 ## Future

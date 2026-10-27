@@ -8,9 +8,10 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 | `models.py` | ✅ | `Fare` (normalised round-trip fare: price per person, stops per leg, nights, absolute booking link) and `Candidate` (a fare plus its deal window). |
 | `price_api.py` | ✅ | Client for `GET /aviasales/v3/prices_for_dates`. Token in the `X-Access-Token` header; malformed entries are skipped with a warning. |
 | `search.py` | ✅ | `fetch_fares`: one request per departure month covered by the deal windows. `select_candidates`: max stops on either leg, deal window by days ahead, de-duplication (cheapest per route, dates and carrier), sorted by price. |
-| `cli.py` | ✅ | `python -m flights_watcher search --config …` lists the candidates. Read-only: stores nothing, sends nothing. |
 | `deals.py` | ✅ | Flights keys for the history (`route_key` = origin-destination airports), observations from candidates, and `find_opportunities` (evaluates each candidate against its window, using the route's usual price). |
-| Telegram alerts | Phase 1 | `run` command with dry-run mode. |
+| `messages.py` | ✅ | Telegram texts in English and Spanish (HTML, escaped): deal alert, summary of the rest, warm-up start message. |
+| `runner.py` | ✅ | One complete run: search → warm-up or evaluate and plan → record prices → send (each alert logged once delivered) → finish. `dry_run` writes and sends nothing. |
+| `cli.py` | ✅ | `search` (read-only table) and `run [--dry-run] [--db PATH]`. |
 | `Dockerfile` | Phase 2 | Container image. |
 
 ## Layout
@@ -25,7 +26,9 @@ watchers/flights/
 ## Usage
 
 ```bash
-make search                          # flights-bio, needs .env with TRAVELPAYOUTS_API_TOKEN
+make search                          # table of candidates (read-only)
+make dry-run                         # full run, prints the Telegram messages, stores nothing
+make run                             # full run: records history and sends messages
 make search INSTANCE=flights-mad     # another instance
 uv run python -m flights_watcher --help
 ```
