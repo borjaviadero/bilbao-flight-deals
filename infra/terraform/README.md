@@ -40,7 +40,7 @@ make tf-ssh           # log in as ubuntu
 
 **Your IP changes** (home connections usually do): run `make tf-main-config && make tf-apply` to update the SSH rule.
 
-**Out of host capacity**: Ampere A1 capacity in a region is sometimes exhausted. Nothing is wrong with the code; run `make tf-apply` again later.
+**Out of host capacity**: Ampere A1 capacity in a region is sometimes exhausted, for minutes or hours. Nothing is wrong with the code; the network is created and only the server is missing. `make tf-apply-retry` ([`scripts/apply-until-capacity.sh`](scripts/apply-until-capacity.sh)) retries every 3 minutes (up to 60 times; `ATTEMPTS` and `WAIT_SECONDS` change it). It applies without asking, so it only proceeds when the plan is exactly "create the server" and stops on any other plan or error.
 
 ## Rules
 

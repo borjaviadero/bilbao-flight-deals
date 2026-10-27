@@ -3,7 +3,7 @@
 .PHONY: help install lint format typecheck test check search dry-run run \
 	docker-build docker-dry-run docker-run docker-import-history \
 	tf-fmt tf-bootstrap-init tf-bootstrap-plan tf-bootstrap-apply \
-	tf-main-config tf-init tf-plan tf-apply tf-ssh
+	tf-main-config tf-init tf-plan tf-apply tf-apply-retry tf-ssh
 
 help:  ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-22s %s\n", $$1, $$2}'
@@ -103,6 +103,9 @@ tf-plan:  ## Show what the main stack would change (changes nothing)
 
 tf-apply:  ## Create or update the network and the server (asks to confirm)
 	$(TF_MAIN) apply
+
+tf-apply-retry:  ## Retry creating the server while OCI is out of ARM capacity (no prompt)
+	infra/terraform/scripts/apply-until-capacity.sh
 
 tf-ssh:  ## Log in to the server over SSH
 	$$($(TF_MAIN) output -raw ssh_command)
