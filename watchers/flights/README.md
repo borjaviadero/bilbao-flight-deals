@@ -4,7 +4,7 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 
 | Module | Status | What it does |
 |---|---|---|
-| `config.py` | ✅ | Adds the flights `search` section (origin, destinations, passengers, currency, max stops, `trip_length`) to the shared instance config. `trip_length` sets the nights allowed by outbound flight time (short flights → short trips). |
+| `config.py` | ✅ | Adds the flights `search` section (origin, destinations, passengers, currency, max stops, `trip_length`) to the shared instance config. `trip_length` sets the nights allowed by outbound flight time (short flights → short trips); `city_names` overrides downloaded names (e.g. `BIO: Bilbao`). |
 | `models.py` | ✅ | `Fare` (normalised round-trip fare: price per person, stops per leg, outbound flight time, nights, absolute booking link) and `Candidate` (a fare plus its deal window). |
 | `price_api.py` | ✅ | Client for `GET /aviasales/v3/prices_for_dates`. Token in the `X-Access-Token` header; malformed entries are skipped with a warning. |
 | `search.py` | ✅ | `fetch_fares`: one request per departure month covered by the deal windows. `select_candidates`: max stops on either leg, trip length for the flight time, deal window by days ahead, de-duplication (cheapest per route, dates and carrier), sorted by price. |

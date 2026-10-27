@@ -122,3 +122,12 @@ def test_truncate_keeps_whole_lines() -> None:
     assert len(result) <= 100
     assert result.endswith("\n…")
     assert all(line.startswith("line") for line in result.splitlines()[:-1])
+
+
+def test_drop_is_rounded_to_whole_percent() -> None:
+    text = alert_message(opportunity(drop="32.8"), config(), "es", NAMES)
+    assert "📉 33% por debajo de lo habitual (100 €)" in text
+
+
+def test_flights_bio_overrides_the_origin_name() -> None:
+    assert config().search.city_names == {"BIO": "Bilbao"}

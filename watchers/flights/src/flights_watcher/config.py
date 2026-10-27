@@ -44,6 +44,10 @@ class FlightSearch(StrictModel):
         default_factory=list, description="Nights allowed by flight time; empty = any length"
     )
     max_stops: int = Field(ge=0, le=2, description="Maximum stops on each leg")
+    city_names: dict[IataCode, str] = Field(
+        default_factory=dict,
+        description="Names that replace the downloaded ones, by IATA city or airport code",
+    )
 
     @model_validator(mode="after")
     def _check_trip_length(self) -> Self:

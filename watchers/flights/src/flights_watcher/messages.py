@@ -129,7 +129,9 @@ def alert_message(
     if evaluation.drop_percent is not None and evaluation.drop_percent > 0:
         lines.append(
             "📉 "
-            + t["drop"].format(drop=fmt(evaluation.drop_percent), usual=fmt(evaluation.usual_price))
+            + t["drop"].format(
+                drop=f"{evaluation.drop_percent:.0f}", usual=fmt(evaluation.usual_price)
+            )
         )
     lines.append("⏳ " + t["departs_in"].format(days=candidate.days_ahead))
     lines.append(t["indicative"])

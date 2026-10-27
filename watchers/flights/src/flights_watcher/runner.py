@@ -73,7 +73,10 @@ def run_instance(
     warmup = config.alerts.warmup_first_run and history.completed_runs(instance) == 0
     report = RunReport(warmup=warmup, fetched=len(fares), candidates=len(candidates))
 
-    names = city_names(http, history, language, now, store=not dry_run) if http is not None else {}
+    downloaded = (
+        city_names(http, history, language, now, store=not dry_run) if http is not None else {}
+    )
+    names = {**downloaded, **config.search.city_names}
 
     plan: AlertPlan[Candidate] = AlertPlan(send=[], summary=[], skipped=[])
     if warmup:

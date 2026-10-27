@@ -62,7 +62,9 @@ def api_and_telegram_transport(sent: list[dict[str, object]]):  # type: ignore[n
 
 
 NOW = datetime(2026, 10, 27, 12, tzinfo=ZoneInfo("Europe/Madrid"))
-CITIES = json.dumps([{"code": "BIO", "name": "Bilbao"}, {"code": "MIL", "name": "Milán"}]).encode()
+CITIES = json.dumps(
+    [{"code": "BIO", "name": "Ciudad de Bilbao"}, {"code": "MIL", "name": "Milán"}]
+).encode()
 ENV = {
     "TRAVELPAYOUTS_API_TOKEN": "t",
     "TELEGRAM_BOT_TOKEN": "123:abc",
@@ -83,7 +85,7 @@ def test_run_sends_the_start_message(tmp_path: Path) -> None:
     assert code == 0
     assert len(sent) == 1
     assert sent[0]["chat_id"] == -1001 and sent[0]["message_thread_id"] == 2
-    assert "Empiezo a vigilar vuelos desde Bilbao" in str(sent[0]["text"])
+    assert "Empiezo a vigilar vuelos desde Bilbao" in str(sent[0]["text"])  # config override
     assert "Milán (MXP)" in str(sent[0]["text"])
     assert db.exists()
 
