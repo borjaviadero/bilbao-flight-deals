@@ -11,13 +11,13 @@ It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestr
 ## What it does
 
 1. **Watches** round-trip fares from Bilbao to any destination, several times a day.
-2. **Filters** them: direct or 1-stop flights, departing between 7 days and 6 months ahead.
+2. **Filters** them: direct or 1-stop flights, departing between 7 days and 6 months ahead, and a trip length that fits the distance (2–7 nights for flights up to 3 h, 3–10 up to 6 h, 6–21 beyond).
 3. **Remembers** every price it sees, so it learns what "normal" looks like for each route.
 4. **Decides** whether a fare is a deal, with stricter rules for short notice:
 
    | Departure | Alert if | Label |
    |---|---|---|
-   | 30 days – 6 months | ≥ 30% below usual **or** < €60 per person | ✈️ Deal |
+   | 30 days – 6 months | ≥ 30% below usual **or** ≤ €40 per person | ✈️ Deal |
    | 7 – 29 days | ≥ 50% below usual **or** ≤ €30 per person | ⚡ Super deal · last minute |
 5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
 6. **Summarises** the best fares every Sunday.
@@ -25,12 +25,17 @@ It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestr
 Example alert:
 
 ```
-✈️ Deal: Bilbao → Rome
-Out 14 Dec · back 18 Dec (4 nights) · direct
-€98 for 2 people (€49 pp)
-Usually ~€170 → -42%
-[View flight]
+✈️ Deal · Bilbao → Rome (FCO)
+📅 Mon 14 Dec → Fri 18 Dec · 4 nights
+🛫 Direct both ways · FR
+💶 49 € per person · 98 € for 2
+📉 42% below usual (85 €)
+⏳ Departs in 48 days
+🔎 Indicative price from recent searches: check it before buying.
+View flight
 ```
+
+Messages can be in English or Spanish (`telegram.language` in the instance config).
 
 ## Architecture
 

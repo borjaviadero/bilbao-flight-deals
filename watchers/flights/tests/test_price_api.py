@@ -38,6 +38,8 @@ def test_parse_valid_fares_and_skip_malformed() -> None:
     assert milan.nights == 7
     assert milan.link.startswith("https://www.aviasales.com/search/")
     assert milan.total_price(2) == Decimal("52")
+    assert milan.outbound_minutes == 115  # duration_to
+    assert fares[1].outbound_minutes == 205  # no duration_to: half of the total
 
 
 def test_parse_error_payload() -> None:

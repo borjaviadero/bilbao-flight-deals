@@ -14,8 +14,18 @@ search:
   trip: round_trip
   passengers: 2
   currency: EUR
-  trip_length_nights: any
+  trip_length:                 # nights allowed, by outbound flight time (a proxy for distance)
+    - max_flight_hours: 3      # e.g. Milan, Valencia, London
+      min_nights: 2
+      max_nights: 7
+    - max_flight_hours: 6      # e.g. Canary Islands, Greece, Morocco
+      min_nights: 3
+      max_nights: 10
+    - min_nights: 6            # longer flights, e.g. Mexico, New York
+      max_nights: 21
   max_stops: 1                 # direct or 1 stop on each leg (e.g. BIO → DUB → HER)
+  city_names:                  # override names from the data file (it says "Ciudad de Bilbao")
+    BIO: Bilbao
   # Layover duration and separate-ticket detection are not available from the
   # current price source, so they are not configurable (see docs/price-source.md).
 

@@ -74,3 +74,14 @@ def test_file_database_persists(tmp_path: Path) -> None:
         h.record("i", [obs("10")], NOW)
     with PriceHistory(path) as h:
         assert h.usual_price("i", "BIO-MXP", since=NOW, min_observations=1) == Decimal("10")
+
+
+def test_cache_round_trip_and_expiry() -> None:
+    with PriceHistory.in_memory() as h:
+        assert h.cached("cities:es", max_age=timedelta(days=30), now=NOW) is None
+        h.store_cache("cities:es", {"MIL": "Milán"}, NOW)
+        assert h.cached("cities:es", max_age=timedelta(days=30), now=NOW) == {"MIL": "Milán"}
+        later = NOW + timedelta(days=31)
+        assert h.cached("cities:es", max_age=timedelta(days=30), now=later) is None
+        h.store_cache("cities:es", {"MIL": "Milano"}, later)
+        assert h.cached("cities:es", max_age=timedelta(days=30), now=later) == {"MIL": "Milano"}

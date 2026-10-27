@@ -8,22 +8,24 @@ Tables:
     runs          one row per execution of an instance (used for the warm-up run)
     observations  every price seen, per item and route
     alerts        the last alert sent per item (to avoid repeating alerts)
+    cache         reference data downloaded occasionally (e.g. city names)
 
 Prices are stored as text to keep ``Decimal`` precision; timestamps are UTC ISO 8601.
 """
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import statistics
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from types import TracebackType
-from typing import Self
+from typing import Any, Self
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -48,6 +50,12 @@ CREATE TABLE IF NOT EXISTS observations (
 );
 CREATE INDEX IF NOT EXISTS ix_observations_route
     ON observations (instance, route_key, observed_at);
+
+CREATE TABLE IF NOT EXISTS cache (
+    name          TEXT    PRIMARY KEY,
+    value         TEXT    NOT NULL,
+    fetched_at    TEXT    NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS alerts (
     instance      TEXT    NOT NULL,
@@ -193,6 +201,26 @@ class PriceHistory:
                 " price = excluded.price, window = excluded.window,"
                 " alerted_at = excluded.alerted_at",
                 (instance, item_key, str(price), window, _ts(now)),
+            )
+
+    # --- cache -------------------------------------------------------------------
+
+    def cached(self, name: str, *, max_age: timedelta, now: datetime) -> Any | None:
+        """A cached JSON value, or ``None`` if missing or older than ``max_age``."""
+        row = self._conn.execute(
+            "SELECT value FROM cache WHERE name = ? AND fetched_at >= ?",
+            (name, _ts(now - max_age)),
+        ).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def store_cache(self, name: str, value: Any, now: datetime) -> None:
+        """Save a JSON-serialisable value under ``name``, replacing the previous one."""
+        with self._transaction() as conn:
+            conn.execute(
+                "INSERT INTO cache (name, value, fetched_at) VALUES (?, ?, ?)"
+                " ON CONFLICT (name) DO UPDATE SET value = excluded.value,"
+                " fetched_at = excluded.fetched_at",
+                (name, json.dumps(value, ensure_ascii=False), _ts(now)),
             )
 
 

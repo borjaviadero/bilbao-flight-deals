@@ -33,6 +33,7 @@ FARE = Fare(
     stops_out=0,
     stops_back=0,
     duration_minutes=240,
+    outbound_minutes=120,
     gate="g",
     link="https://www.aviasales.com/search/X?a=1&b=2",
 )
@@ -64,22 +65,26 @@ def test_short_date() -> None:
     assert short_date(datetime(2026, 12, 10), "en") == "Thu 10 Dec"
 
 
+NAMES = {"BIO": "Bilbao", "MIL": "Milán"}
+
+
 def test_alert_message_spanish() -> None:
-    text = alert_message(opportunity(drop="70"), config(), "es")
+    text = alert_message(opportunity(drop="70"), config(), "es", NAMES)
     assert text.splitlines() == [
-        "<b>✈️ Chollo · BIO → MXP (MIL)</b>",
+        "<b>✈️ Chollo · Bilbao → Milán (MXP)</b>",
         "📅 jue 10 dic → lun 14 dic · 4 noches",
         "🛫 Directo ida y vuelta · VY",
         "💶 30 € por persona · 60 € para 2",
         "📉 70% por debajo de lo habitual (100 €)",
         "⏳ Sale dentro de 44 días",
+        "🔎 Precio orientativo de búsquedas recientes: compruébalo antes de comprar.",
         '<a href="https://www.aviasales.com/search/X?a=1&amp;b=2">Ver vuelo</a>',
     ]
 
 
 def test_alert_message_english_with_stops_and_no_history() -> None:
     text = alert_message(opportunity(stops_back=1), config(), "en")
-    assert "<b>✈️ Deal · BIO → MXP (MIL)</b>" in text
+    assert "<b>✈️ Deal · BIO → MXP (MIL)</b>" in text  # no names: codes
     assert "Stops: 0 out · 1 back" in text
     assert "below usual" not in text
 
@@ -91,20 +96,23 @@ def test_values_are_escaped() -> None:
 
 
 def test_summary_message() -> None:
-    text = summary_message([opportunity(), opportunity(destination_airport="STN")], "es")
+    text = summary_message(
+        [opportunity(), opportunity(destination_airport="STN", destination_city="LON")], "es", NAMES
+    )
     lines = text.splitlines()
     assert lines[0] == "<b>📋 2 chollos más en esta búsqueda</b>"
-    assert lines[2].startswith('• <a href="') and "STN · jue 10 dic → lun 14 dic · 30 €" in lines[2]
+    assert "Milán (MXP) · jue 10 dic → lun 14 dic · 30 €" in lines[1]
+    assert "STN (LON) · jue 10 dic" in lines[2]  # unknown city: codes
     assert summary_message([opportunity()], "es").startswith("<b>📋 1 chollo más en")
 
 
 def test_start_message() -> None:
     candidates = [opportunity().item]
-    text = start_message(config(), candidates, recorded=194, language="es")
-    assert "Empiezo a vigilar vuelos desde BIO" in text
+    text = start_message(config(), candidates, recorded=194, language="es", names=NAMES)
+    assert "Empiezo a vigilar vuelos desde Bilbao" in text
     assert "de 7 a 180 días vista, máx. 1 escala(s)" in text
     assert "194 precios guardados" in text
-    assert "MXP · jue 10 dic" in text
+    assert "Milán (MXP) · jue 10 dic" in text
     assert "ningún vuelo" in start_message(config(), [], recorded=0, language="es")
 
 
@@ -114,3 +122,12 @@ def test_truncate_keeps_whole_lines() -> None:
     assert len(result) <= 100
     assert result.endswith("\n…")
     assert all(line.startswith("line") for line in result.splitlines()[:-1])
+
+
+def test_drop_is_rounded_to_whole_percent() -> None:
+    text = alert_message(opportunity(drop="32.8"), config(), "es", NAMES)
+    assert "📉 33% por debajo de lo habitual (100 €)" in text
+
+
+def test_flights_bio_overrides_the_origin_name() -> None:
+    assert config().search.city_names == {"BIO": "Bilbao"}

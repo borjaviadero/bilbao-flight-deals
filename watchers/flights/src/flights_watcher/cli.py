@@ -125,7 +125,14 @@ def _run(
     db_path = args.db or Path(env.get(DB_ENV) or DEFAULT_DB)
     with PriceHistory(db_path) as history:
         report = run_instance(
-            config, client, history, send, now=now, timezone=TIMEZONE, dry_run=args.dry_run
+            config,
+            client,
+            history,
+            send,
+            now=now,
+            timezone=TIMEZONE,
+            dry_run=args.dry_run,
+            http=http,
         )
 
     if args.dry_run:
