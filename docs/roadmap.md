@@ -23,7 +23,7 @@
 ### Phase 1 checklist
 
 - [x] Python workspace (uv), quality tooling (Ruff, mypy, pytest) and validated instance config
-- [ ] Price API client and filters
+- [x] Price API client and filters (`make search`)
 - [ ] Price history (SQLite) and deal rules
 - [ ] Telegram notifier and CLI (with dry-run)
 - [ ] First real deal alert on Telegram

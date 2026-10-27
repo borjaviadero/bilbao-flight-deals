@@ -52,6 +52,12 @@ Relevant response fields:
 | `gate` | `Farera` | Agency selling the fare |
 | `link` | `/search/BIO2910MIL1911?...` | Relative booking link |
 
+## How the watcher queries it
+
+- One request per **departure month** covered by the instance's deal windows (7–180 days ahead → about 6 requests per run), with `destination` omitted ("anywhere").
+- Every fare is then filtered locally: max stops on either leg, deal window by days ahead, de-duplication.
+- Querying popular destinations individually, to get more results for far months, is planned once there is price history to show where it helps.
+
 ## Rate limits
 
 `/v3/prices_for_dates` allows **600 requests per minute**; exceeding a limit returns HTTP `429`. The watcher makes a few requests every 6 hours, far below the limit.
