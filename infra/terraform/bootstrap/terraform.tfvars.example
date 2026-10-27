@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars (ignored by Git) and fill in.
+# The tenancy OCID is shown in ~/.oci/config ("tenancy=") and in the OCI console
+# (Profile → Tenancy).
+
+tenancy_ocid       = "ocid1.tenancy.oc1..replace-me"
+budget_alert_email = "you@example.com"
+# oci_profile      = "DEFAULT"

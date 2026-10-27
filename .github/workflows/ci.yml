@@ -1,7 +1,8 @@
 # Continuous integration.
 #
-#   check  every pull request and every push to main: lint, type checks and tests
-#          (the same `make check` run locally).
+#   check      every pull request and every push to main: lint, type checks and tests
+#              (the same `make check` run locally).
+#   terraform  formatting and validation of every Terraform stack (no cloud access).
 #   image  builds the flights watcher image. On pull requests it only builds it
 #          (amd64) to prove the Dockerfile works; on main it builds it for amd64
 #          (laptops) and arm64 (the Oracle Cloud server) and pushes it to GHCR.
@@ -43,6 +44,28 @@ jobs:
 
       - name: make check
         run: make check
+
+  terraform:
+    name: Terraform fmt and validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: [infra/terraform/bootstrap]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.0"
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff ${{ matrix.stack }}
+
+      - name: terraform init (providers only, no state backend)
+        run: terraform -chdir=${{ matrix.stack }} init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform -chdir=${{ matrix.stack }} validate
 
   image:
     name: Docker image
