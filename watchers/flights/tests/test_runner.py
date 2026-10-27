@@ -15,7 +15,7 @@ from dealhunter_core.history import PriceHistory
 from dealhunter_core.http import HttpResponse, JsonHttpClient
 from flights_watcher.config import FlightsInstanceConfig, load_config
 from flights_watcher.price_api import TravelpayoutsClient
-from flights_watcher.runner import run_instance
+from flights_watcher.runner import SEND_INTERVAL_SECONDS, run_instance
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MADRID = ZoneInfo("Europe/Madrid")
@@ -82,6 +82,7 @@ def run(
         now=now,
         timezone=MADRID,
         dry_run=dry_run,
+        pause=lambda _: None,
     )
 
 
@@ -120,7 +121,7 @@ def test_cap_puts_the_rest_in_a_summary() -> None:
         sent.clear()
         report = run(h, sent, now=NOW + timedelta(hours=6), cfg=config(max_per_run=1))
         assert (report.alerts_sent, report.in_summary) == (1, 1)
-        assert len(sent) == 2 and "más en esta búsqueda" in sent[1]
+        assert len(sent) == 2 and "no cabía en los 1 avisos" in sent[1]
         # the summarised deal is not announced again
         sent.clear()
         report = run(h, sent, now=NOW + timedelta(hours=12), cfg=config(max_per_run=1))
@@ -152,3 +153,22 @@ def test_failed_send_leaves_the_run_unfinished() -> None:
         with pytest.raises(RuntimeError):
             run_instance(config(), client(DEFAULT_FARES), h, failing, now=NOW, timezone=MADRID)
         assert h.completed_runs("flights-bio") == 0  # next run is still a warm-up
+
+
+def test_messages_are_spaced_out() -> None:
+    sent: list[str] = []
+    pauses: list[float] = []
+    with PriceHistory.in_memory() as h:
+        run(h, sent)
+        sent.clear()
+        run_instance(
+            config(),
+            client(DEFAULT_FARES),
+            h,
+            sent.append,
+            now=NOW + timedelta(hours=6),
+            timezone=MADRID,
+            pause=pauses.append,
+        )
+    assert len(sent) == 2
+    assert pauses == [SEND_INTERVAL_SECONDS]  # between messages, not before the first
