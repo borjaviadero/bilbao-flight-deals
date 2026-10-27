@@ -46,7 +46,7 @@ flowchart TD
     F --> CORE
     C -.-> CORE
     W -.-> CORE
-    CORE["Core<br/>price history · deal rules · de-duplication"] --> DB[("PostgreSQL")]
+    CORE["Core<br/>price history · deal rules · de-duplication"] --> DB[("SQLite")]
     CORE --> TG["Telegram bot<br/>group per category · topic per instance"]
 ```
 
