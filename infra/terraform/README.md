@@ -5,7 +5,7 @@ Infrastructure as Code for Oracle Cloud Always Free, in the home region **Spain 
 | Stack | Folder | Creates | State | Status |
 |---|---|---|---|---|
 | Bootstrap | [`bootstrap/`](bootstrap) | Project compartment, versioned private bucket for Terraform state, budget alert on any spend | Local file (`bootstrap/terraform.tfstate`, ignored by Git) | ✅ |
-| Main | [`main/`](main) | Network (VCN, internet gateway, route table, security list, public subnet) and the ARM VM: Ubuntu 24.04, 2 OCPU / 12 GB, 50 GB disk | In the bucket, via the native `oci` backend (with locking) | ✅ |
+| Main | [`main/`](main) | Network (VCN, internet gateway, route table, security list, public subnet) and the ARM VM: Ubuntu 24.04, 1 OCPU / 6 GB (half the free allowance), 50 GB disk | In the bucket, via the native `oci` backend (with locking) | ✅ |
 
 The bootstrap stack exists because the state bucket cannot hold the state of the stack that creates it. It is small, rarely changes, and every resource in it can be re-imported if its local state is lost.
 

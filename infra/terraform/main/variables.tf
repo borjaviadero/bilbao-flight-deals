@@ -37,16 +37,29 @@ variable "name" {
 }
 
 # Always Free Ampere A1: 2 OCPU and 12 GB in total for the whole tenancy (Oct 2026).
+# Half of it is plenty for k3s and the watchers, and smaller shapes are easier to get when
+# the region is short of ARM capacity. The server can be resized in place later (it
+# reboots), or the other half used for a second node.
 variable "ocpus" {
   description = "ARM cores of the server (Always Free limit: 2 in total)."
   type        = number
-  default     = 2
+  default     = 1
+
+  validation {
+    condition     = var.ocpus >= 1 && var.ocpus <= 2
+    error_message = "Always Free allows at most 2 OCPU in total."
+  }
 }
 
 variable "memory_gbs" {
   description = "Memory of the server in GB (Always Free limit: 12 in total)."
   type        = number
-  default     = 12
+  default     = 6
+
+  validation {
+    condition     = var.memory_gbs >= 1 && var.memory_gbs <= 12
+    error_message = "Always Free allows at most 12 GB in total."
+  }
 }
 
 variable "boot_volume_gbs" {
