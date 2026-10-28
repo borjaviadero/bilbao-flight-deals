@@ -13,6 +13,8 @@ kubectl apply -k infra/k8s
 | `cronjob-flights-bio.yaml` | The flights watcher, instance `flights-bio`: **09:00 and 21:00 Europe/Madrid**, never two runs at once, one retry, 15 min limit, non-root, read-only root filesystem, no capabilities, CPU/memory limits |
 | `kustomization.yaml` | The list above |
 | `jobs/dry-run.yaml` | One-off dry run with the same image, secrets and volume (not in the kustomization) |
+| `jobs/history-copy.yaml` | Temporary pod used to copy a SQLite history file into the volume |
+| `cluster/install-k3s.sh` | Installs the pinned k3s on the server (run over SSH) |
 
 ## Secret
 
@@ -36,5 +38,22 @@ make k8s-local-down   # delete the local cluster
 ```
 
 `kubectl create job --from=cronjob/flights-bio now -n dealhunter` triggers a **real** run (it sends alerts).
+
+## On the server (k3s)
+
+The Kubernetes API is **never exposed to the internet**: kubectl reaches it through an SSH tunnel (local port 16443 → server `127.0.0.1:6443`), and the OCI security list still allows only SSH from your IP.
+
+```bash
+make k3s-install                         # k3s v1.35.5+k3s1: no ingress/LB, Secrets encrypted at rest
+make k3s-kubeconfig                      # ~/.kube/dealhunter-oci.yaml (mode 600)
+make k3s-tunnel                          # SSH tunnel in the background
+export KUBECONFIG=~/.kube/dealhunter-oci.yaml
+make k8s-apply k8s-secret                # same manifests as on k3d
+make k8s-import-history                  # copy data/dealhunter.sqlite3 into the volume (once)
+make k8s-dry-run                         # check, then wait for 09:00 / 21:00
+make k3s-tunnel-stop
+```
+
+`install-k3s.sh` also lets pod (10.42.0.0/16) and service (10.43.0.0/16) traffic through the iptables rules of Oracle's Ubuntu image, which otherwise reject everything but SSH. Nothing new is opened to the internet.
 
 CI renders the kustomization and validates every manifest with kubeconform.
