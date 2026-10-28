@@ -1,0 +1,8 @@
+# Everything the cluster runs, applied with: kubectl apply -k infra/k8s
+# The Secret is created separately from .env (see README) and is never committed.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - cronjob-flights-bio.yaml

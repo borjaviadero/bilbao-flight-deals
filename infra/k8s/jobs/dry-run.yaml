@@ -1,0 +1,56 @@
+# One-off dry run with the same image, secrets and volume as the CronJob: prints the
+# messages it would send, sends and stores nothing. Not part of the kustomization.
+#   kubectl create -f infra/k8s/jobs/dry-run.yaml   (or: make k8s-dry-run)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: flights-bio-dry-run-
+  namespace: dealhunter
+  labels:
+    app.kubernetes.io/name: flights-watcher
+    app.kubernetes.io/instance: flights-bio-dry-run
+    app.kubernetes.io/part-of: dealhunter
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 3600 # removed an hour after it finishes
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flights-watcher
+          image: ghcr.io/borjaviadero/flights-watcher:latest
+          imagePullPolicy: Always
+          args: [run, --config, config/watchers/flights-bio.yaml, --dry-run]
+          envFrom:
+            - secretRef:
+                name: dealhunter-secrets
+          env:
+            - name: DEALHUNTER_DB_PATH
+              value: /data/dealhunter.sqlite3
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dealhunter-data
+        - name: tmp
+          emptyDir: {}

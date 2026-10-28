@@ -1,0 +1,14 @@
+# Disk for the SQLite price history (/data in the watcher container).
+# k3s provides it with its built-in "local-path" storage: a folder on the server's disk.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dealhunter-data
+  namespace: dealhunter
+  labels:
+    app.kubernetes.io/part-of: dealhunter
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
