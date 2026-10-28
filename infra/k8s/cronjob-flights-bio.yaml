@@ -1,0 +1,68 @@
+# Flights watcher, instance "flights-bio": one run at 09:00 and 21:00, Madrid time.
+#
+# Secrets (tokens and Telegram IDs) come from the Secret "dealhunter-secrets", created
+# from .env on the cluster (never committed). The history lives in the PVC.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flights-bio
+  namespace: dealhunter
+  labels: &labels
+    app.kubernetes.io/name: flights-watcher
+    app.kubernetes.io/instance: flights-bio
+    app.kubernetes.io/part-of: dealhunter
+spec:
+  schedule: "0 9,21 * * *" # same as config/watchers/flights-bio.yaml
+  timeZone: Europe/Madrid
+  concurrencyPolicy: Forbid # never two runs at once (they share the SQLite file)
+  startingDeadlineSeconds: 3600 # if the server was down at 09:00, still run until 10:00
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels: *labels
+    spec:
+      backoffLimit: 1 # one retry; a second failure is left for a human to look at
+      activeDeadlineSeconds: 900 # a run normally takes under a minute
+      template:
+        metadata:
+          labels: *labels
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001 # user "app" of the image
+            runAsGroup: 10001
+            fsGroup: 10001 # makes the volume writable by that user
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: flights-watcher
+              image: ghcr.io/borjaviadero/flights-watcher:latest
+              imagePullPolicy: Always # pick up the image of the latest merge
+              args: [run, --config, config/watchers/flights-bio.yaml]
+              envFrom:
+                - secretRef:
+                    name: dealhunter-secrets
+              env:
+                - name: DEALHUNTER_DB_PATH
+                  value: /data/dealhunter.sqlite3
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { cpu: 500m, memory: 256Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: dealhunter-data
+            - name: tmp
+              emptyDir: {}

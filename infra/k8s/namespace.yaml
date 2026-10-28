@@ -1,0 +1,10 @@
+# Everything of the project lives in this namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dealhunter
+  labels:
+    app.kubernetes.io/part-of: dealhunter
+    # Pod Security Admission: reject pods that do not follow the "restricted" profile.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest

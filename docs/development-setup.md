@@ -15,6 +15,7 @@ Tools needed to work on this project locally. The reference environment is **WSL
 | Docker Compose | Running watcher + database locally | 1–2 | 5.6 |
 | Terraform | Provisioning Oracle Cloud | 3 | 1.17 |
 | kubectl | Managing the k3s cluster | 4 | 1.36 (works with clusters 1.35–1.37) |
+| [k3d](https://k3d.io) | Local k3s cluster in Docker, to test the Kubernetes manifests | 4 | 5.x |
 | `curl`, `jq`, `unzip` | Scripting and API checks | All | — |
 
 Reference versions are the ones the project was set up with (October 2026). Newer patch releases are fine.
@@ -26,6 +27,7 @@ Every tool is installed from its **official apt repository**, so `sudo apt upgra
 - Docker Engine: <https://docs.docker.com/engine/install/ubuntu/>
 - Terraform: <https://developer.hashicorp.com/terraform/install>
 - kubectl (pinned to the `v1.36` repository): <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>
+- k3d (official install script, a single binary in `/usr/local/bin`): <https://k3d.io/stable/#installation>
 
 Docker Engine runs inside WSL (not Docker Desktop), which requires **systemd**:
 

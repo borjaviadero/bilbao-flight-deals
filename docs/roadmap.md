@@ -20,6 +20,12 @@
 - [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [x] Oracle Cloud Always Free account — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
 
+### Phase 4 checklist
+
+- [ ] Kubernetes manifests (namespace, volume, CronJob) validated in CI and tried on a local k3d cluster
+- [ ] k3s installed on the server; the CronJob runs at 09:00 and 21:00 Madrid time
+- [ ] An alert arrives with no laptop on
+
 ### Phase 3 checklist
 
 - [ ] OCI API key and SSH key in WSL — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
