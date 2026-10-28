@@ -1,0 +1,13 @@
+#cloud-config
+# First-boot setup of the server (runs once, when the VM is created).
+# Kubernetes (k3s) is installed in Phase 4.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - unattended-upgrades # security updates installed automatically
+
+timezone: Etc/UTC # servers keep UTC; schedules set their own time zone
+
+ssh_pwauth: false # keys only, never passwords

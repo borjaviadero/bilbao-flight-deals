@@ -29,6 +29,7 @@ venv/
 !*.tfvars.example
 crash.log
 backend.hcl
+*.tfplan
 .terraform.lock.hcl.bak
 
 # Kubernetes

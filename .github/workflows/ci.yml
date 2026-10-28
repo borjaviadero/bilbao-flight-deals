@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        stack: [infra/terraform/bootstrap]
+        stack: [infra/terraform/bootstrap, infra/terraform/main]
     steps:
       - uses: actions/checkout@v4
 
