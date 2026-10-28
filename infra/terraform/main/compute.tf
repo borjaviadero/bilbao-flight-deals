@@ -23,6 +23,7 @@ data "oci_core_images" "ubuntu" {
 resource "oci_core_instance" "server" {
   compartment_id      = var.compartment_ocid
   availability_domain = data.oci_identity_availability_domains.all.availability_domains[var.availability_domain_index].name
+  fault_domain        = var.fault_domain # null: OCI chooses
   display_name        = var.name
   shape               = "VM.Standard.A1.Flex"
 
@@ -54,6 +55,7 @@ resource "oci_core_instance" "server" {
   lifecycle {
     # A newer Ubuntu image or an edited cloud-init must not replace a running server;
     # they apply to servers created from then on.
-    ignore_changes = [source_details[0].source_id, metadata["user_data"]]
+    # The fault domain only matters when creating (the retry script rotates it).
+    ignore_changes = [source_details[0].source_id, metadata["user_data"], fault_domain]
   }
 }

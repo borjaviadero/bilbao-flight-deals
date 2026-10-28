@@ -68,6 +68,17 @@ variable "boot_volume_gbs" {
   default     = 50
 }
 
+variable "fault_domain" {
+  description = "Fault domain for the server (FAULT-DOMAIN-1/2/3), or null to let OCI choose. The retry script rotates it."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.fault_domain == null || contains(["FAULT-DOMAIN-1", "FAULT-DOMAIN-2", "FAULT-DOMAIN-3"], coalesce(var.fault_domain, "-"))
+    error_message = "fault_domain must be FAULT-DOMAIN-1, FAULT-DOMAIN-2, FAULT-DOMAIN-3 or null."
+  }
+}
+
 variable "availability_domain_index" {
   description = "Which availability domain to use (0 = first). Madrid has one."
   type        = number

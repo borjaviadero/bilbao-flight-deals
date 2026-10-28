@@ -40,7 +40,14 @@ make tf-ssh           # log in as ubuntu
 
 **Your IP changes** (home connections usually do): run `make tf-main-config && make tf-apply` to update the SSH rule.
 
-**Out of host capacity**: Ampere A1 capacity in a region is sometimes exhausted, for minutes or hours. Nothing is wrong with the code; the network is created and only the server is missing. `make tf-apply-retry` ([`scripts/apply-until-capacity.sh`](scripts/apply-until-capacity.sh)) retries every 3 minutes (up to 60 times; `ATTEMPTS` and `WAIT_SECONDS` change it). It applies without asking, so it only proceeds when the plan is exactly "create the server" and stops on any other plan or error.
+**Out of host capacity**: Ampere A1 capacity in a region is sometimes exhausted, for minutes or hours. Nothing is wrong with the code; the network is created and only the server is missing. `make tf-apply-retry` ([`scripts/apply-until-capacity.sh`](scripts/apply-until-capacity.sh)) retries every 3 minutes (up to 60 times; `ATTEMPTS` and `WAIT_SECONDS` change it). It applies without asking, so it only proceeds when the plan is exactly "create the server", checks with the OCI CLI (run through `uvx`, no install needed) that no untracked server with the same name exists, retries transient network errors, and stops on anything else. Each attempt uses the next fault domain.
+
+**Untracked server**: if a create is cut off by a network error, OCI may finish creating the server while Terraform never records it. The retry script detects this and stops. Copy the instance OCID from the console (*Compute → Instances*, compartment `bilbao-flight-deals`) and import it, so Terraform manages it instead of creating another:
+
+```bash
+terraform -chdir=infra/terraform/main import oci_core_instance.server <instance-ocid>
+make tf-plan    # expect "No changes" (or only in-place updates)
+```
 
 ## Rules
 
