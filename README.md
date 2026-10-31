@@ -4,7 +4,7 @@
 
 A self-hosted deal hunter that watches flight prices departing from **Bilbao (BIO)** and sends an alert to **Telegram** when a fare is clearly cheaper than usual.
 
-It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
+It is packaged as a **Docker** image and runs twice a day on a **GitHub Actions** schedule. The same image is ready to run as a **Kubernetes (k3s)** CronJob on a free Oracle Cloud server provisioned with **Terraform**; the Kubernetes deployment is tested end to end in CI.
 
 > **Status:** ✅ **In production** since 31 Oct 2026: a scheduled GitHub Actions workflow runs the image twice a day and alerts on Telegram. Terraform for Oracle Cloud and the k3s deployment are ready (Kubernetes is tested end to end in CI); the VM waits for Always Free capacity in Madrid. See the [roadmap](docs/roadmap.md).
 
