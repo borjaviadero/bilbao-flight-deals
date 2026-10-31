@@ -101,3 +101,16 @@ def test_invalid_json() -> None:
     transport = FakeTransport(HttpResponse(200, b"<html>"))
     with pytest.raises(HttpError, match="invalid JSON"):
         client(transport, []).get_json("https://api.test/x")
+
+
+def test_http_error_keeps_the_body() -> None:
+    client = JsonHttpClient(
+        transport=lambda request, timeout: HttpResponse(400, b'{"why": "bad"}'),
+        retries=0,
+        sleep=lambda _: None,
+    )
+    with pytest.raises(HttpError) as info:
+        client.get_json("https://example.test/x?token=secret")
+    assert info.value.status == 400
+    assert info.value.body == b'{"why": "bad"}'
+    assert "secret" not in str(info.value)

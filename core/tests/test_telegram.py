@@ -62,3 +62,10 @@ def test_too_long() -> None:
     with pytest.raises(TelegramError, match="too long"):
         bot.send("x" * 5000)
     assert seen == []
+
+
+def test_http_error_includes_telegram_reason() -> None:
+    body = b'{"ok": false, "error_code": 400, "description": "Bad Request: chat not found"}'
+    bot, _ = notifier(HttpResponse(400, body))
+    with pytest.raises(TelegramError, match="HTTP 400: Bad Request: chat not found"):
+        bot.send("x")

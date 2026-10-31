@@ -42,9 +42,10 @@ Transport = Callable[[urllib.request.Request, float], HttpResponse]
 class HttpError(Exception):
     """A request failed after all retries, or returned an unusable response."""
 
-    def __init__(self, message: str, *, status: int | None = None) -> None:
+    def __init__(self, message: str, *, status: int | None = None, body: bytes = b"") -> None:
         super().__init__(message)
         self.status = status
+        self.body = body  # response body of an HTTP error, for callers that can explain it
 
 
 def urllib_transport(request: urllib.request.Request, timeout: float) -> HttpResponse:
@@ -130,6 +131,7 @@ class JsonHttpClient:
                 raise HttpError(
                     f"{method} {safe_url} returned HTTP {response.status}",
                     status=response.status,
+                    body=response.body,
                 )
 
             try:

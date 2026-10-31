@@ -6,6 +6,7 @@ re-created with the token redacted and without the original exception chained.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from dealhunter_core.config import ResolvedTelegramTarget
@@ -41,7 +42,9 @@ class TelegramNotifier:
         try:
             response = self._http.post_json(f"{API_BASE}/bot{self._token}/sendMessage", payload)
         except HttpError as exc:
-            raise TelegramError(self._redact(str(exc))) from None
+            reason = _description(exc.body)
+            message = f"{exc}: {reason}" if reason else str(exc)
+            raise TelegramError(self._redact(message)) from None
 
         if not isinstance(response, dict) or response.get("ok") is not True:
             description = response.get("description") if isinstance(response, dict) else response
@@ -49,3 +52,12 @@ class TelegramNotifier:
 
     def _redact(self, text: str) -> str:
         return text.replace(self._token, "<bot-token>")
+
+
+def _description(body: bytes) -> str:
+    """Telegram explains errors in a JSON "description" (e.g. "Bad Request: chat not found")."""
+    try:
+        payload = json.loads(body)
+    except ValueError:
+        return ""
+    return str(payload.get("description", "")) if isinstance(payload, dict) else ""
