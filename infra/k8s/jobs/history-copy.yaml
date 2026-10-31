@@ -1,0 +1,39 @@
+# Temporary pod that mounts the history volume, used to copy a SQLite file into it:
+#   make k8s-import-history
+# It only sleeps; it is deleted right after the copy.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: history-copy
+  namespace: dealhunter
+  labels:
+    app.kubernetes.io/part-of: dealhunter
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 600
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: copy
+      image: ghcr.io/borjaviadero/flights-watcher:latest
+      command: [sleep, "600"]
+      resources:
+        requests: { cpu: 10m, memory: 32Mi }
+        limits: { cpu: 100m, memory: 64Mi }
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: dealhunter-data

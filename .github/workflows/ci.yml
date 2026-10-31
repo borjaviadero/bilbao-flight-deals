@@ -76,7 +76,7 @@ jobs:
 
       - name: Render the kustomization and validate every manifest (kubeconform)
         run: |
-          { kubectl kustomize infra/k8s; echo "---"; cat infra/k8s/jobs/*.yaml; } \
+          { kubectl kustomize infra/k8s; for f in infra/k8s/jobs/*.yaml; do echo "---"; cat "$f"; done; } \
             | docker run --rm -i ghcr.io/yannh/kubeconform:v0.6.7 -strict -summary -
 
   image:

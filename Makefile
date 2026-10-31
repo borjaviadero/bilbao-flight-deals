@@ -113,3 +113,40 @@ k8s-dry-run:  ## Run the watcher once now in the cluster, in dry-run mode, and s
 
 k8s-status:  ## Show the CronJob, recent jobs, pods and the volume
 	kubectl -n $(K8S_NS) get cronjob,job,pod,pvc
+
+# --- k3s on the server (Phase 4) --------------------------------------------------
+# The Kubernetes API is never exposed: kubectl reaches it through an SSH tunnel
+# (local port 16443 -> server 127.0.0.1:6443).
+
+.PHONY: k3s-install k3s-kubeconfig k3s-tunnel k3s-tunnel-stop k8s-import-history
+
+SERVER_IP = $(shell terraform -chdir=infra/terraform/main output -raw public_ip 2>/dev/null)
+SERVER_SSH = ssh -i ~/.ssh/oci_dealhunter -o StrictHostKeyChecking=accept-new ubuntu@$(SERVER_IP)
+OCI_KUBECONFIG = $(HOME)/.kube/dealhunter-oci.yaml
+
+k3s-install:  ## Install the pinned k3s on the server (over SSH)
+	@test -n "$(SERVER_IP)" || { echo "No server IP: is the main Terraform stack applied?"; exit 1; }
+	$(SERVER_SSH) 'sudo bash -s' < infra/k8s/cluster/install-k3s.sh
+
+k3s-kubeconfig:  ## Save the server's kubeconfig as ~/.kube/dealhunter-oci.yaml (via the tunnel)
+	@mkdir -p $(HOME)/.kube
+	$(SERVER_SSH) 'sudo cat /etc/rancher/k3s/k3s.yaml' \
+		| sed -e 's#https://127.0.0.1:6443#https://127.0.0.1:16443#' -e 's/\bdefault$$/dealhunter-oci/' \
+		> $(OCI_KUBECONFIG)
+	@chmod 600 $(OCI_KUBECONFIG)
+	@echo "Saved $(OCI_KUBECONFIG). Use it with: export KUBECONFIG=$(OCI_KUBECONFIG)"
+
+k3s-tunnel:  ## Open the SSH tunnel to the server's Kubernetes API in the background
+	$(SERVER_SSH) -f -N -o ExitOnForwardFailure=yes -L 16443:127.0.0.1:6443
+	@echo "Tunnel open on 127.0.0.1:16443 (stop it with: make k3s-tunnel-stop)"
+
+k3s-tunnel-stop:  ## Close the SSH tunnel
+	-pkill -f "16443:127.0.0.1:6443"
+
+k8s-import-history:  ## Copy data/dealhunter.sqlite3 into the cluster's history volume (once)
+	@test -f data/dealhunter.sqlite3 || { echo "No local history in data/"; exit 1; }
+	kubectl apply -f infra/k8s/jobs/history-copy.yaml
+	kubectl -n $(K8S_NS) wait --for=condition=Ready pod/history-copy --timeout=180s
+	kubectl cp data/dealhunter.sqlite3 $(K8S_NS)/history-copy:/data/dealhunter.sqlite3
+	kubectl -n $(K8S_NS) exec history-copy -- ls -l /data
+	kubectl -n $(K8S_NS) delete pod history-copy --wait=false
