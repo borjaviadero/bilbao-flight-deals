@@ -15,5 +15,5 @@ output "image" {
 
 output "shape" {
   description = "Shape and size of the server."
-  value       = "VM.Standard.A1.Flex · ${var.ocpus} OCPU · ${var.memory_gbs} GB · ${var.boot_volume_gbs} GB disk"
+  value       = var.server_type == "arm" ? "VM.Standard.A1.Flex · ${var.ocpus} OCPU · ${var.memory_gbs} GB · ${var.boot_volume_gbs} GB disk" : "VM.Standard.E2.1.Micro · 1/8 OCPU · 1 GB (+2 GB swap) · ${var.boot_volume_gbs} GB disk"
 }

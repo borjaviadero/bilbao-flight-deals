@@ -10,4 +10,10 @@ packages:
 
 timezone: Etc/UTC # servers keep UTC; schedules set their own time zone
 
+# 2 GB of swap on disk: headroom for k3s on the 1 GB micro server (harmless on ARM).
+swap:
+  filename: /swapfile
+  size: 2G
+  maxsize: 2G
+
 ssh_pwauth: false # keys only, never passwords

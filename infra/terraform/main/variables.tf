@@ -36,12 +36,30 @@ variable "name" {
   default     = "dealhunter"
 }
 
+variable "server_type" {
+  description = <<-EOT
+    Which Always Free server to run:
+      "arm"   Ampere A1 (VM.Standard.A1.Flex), sized with ocpus and memory_gbs. The target,
+              but often out of capacity in the region.
+      "micro" AMD VM.Standard.E2.1.Micro (1/8 OCPU, 1 GB). Almost always available; k3s
+              runs on it with swap and trimmed add-ons.
+    Changing it replaces the server (a migration): reinstall k3s and re-import the history.
+  EOT
+  type        = string
+  default     = "micro"
+
+  validation {
+    condition     = contains(["arm", "micro"], var.server_type)
+    error_message = "server_type must be \"arm\" or \"micro\"."
+  }
+}
+
 # Always Free Ampere A1: 2 OCPU and 12 GB in total for the whole tenancy (Oct 2026).
 # Half of it is plenty for k3s and the watchers, and smaller shapes are easier to get when
 # the region is short of ARM capacity. The server can be resized in place later (it
 # reboots), or the other half used for a second node.
 variable "ocpus" {
-  description = "ARM cores of the server (Always Free limit: 2 in total)."
+  description = "ARM cores of the server when server_type = \"arm\" (Always Free limit: 2 in total)."
   type        = number
   default     = 1
 
@@ -52,7 +70,7 @@ variable "ocpus" {
 }
 
 variable "memory_gbs" {
-  description = "Memory of the server in GB (Always Free limit: 12 in total)."
+  description = "Memory in GB when server_type = \"arm\" (Always Free limit: 12 in total)."
   type        = number
   default     = 6
 

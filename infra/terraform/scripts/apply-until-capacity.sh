@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Retry creating the server while Oracle Cloud reports "Out of host capacity".
+# Retry creating the server while Oracle Cloud reports "Out of host capacity"
+# (mostly needed for server_type = "arm").
 #
 # Ampere A1 (ARM) capacity in a region is sometimes exhausted for hours; the usual fix
 # is to keep retrying. Each attempt plans the main stack and applies it WITHOUT asking,

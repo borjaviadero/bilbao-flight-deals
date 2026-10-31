@@ -6,7 +6,7 @@
 	tf-main-config tf-init tf-plan tf-apply tf-apply-retry tf-ssh
 
 help:  ## Show this help
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-22s %s\n", $$1, $$2}'
+	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-22s %s\n", $$1, $$2}'
 
 install:  ## Create the virtual environment and install all packages
 	uv sync
