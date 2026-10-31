@@ -16,6 +16,15 @@ for cidr in 10.42.0.0/16 10.43.0.0/16; do
 done
 if command -v netfilter-persistent >/dev/null; then netfilter-persistent save; fi
 
+# On small servers (the 1 GB AMD micro) also drop metrics-server to save memory.
+EXTRA_FLAGS=()
+mem_mb=$(awk '/MemTotal/ {print int($2 / 1024)}' /proc/meminfo)
+if (( mem_mb < 2048 )); then
+  echo "==> ${mem_mb} MB of RAM: metrics-server disabled"
+  EXTRA_FLAGS+=(--disable metrics-server)
+fi
+swapon --show || true
+
 echo "==> k3s ${K3S_VERSION}"
 # --disable traefik,servicelb : no ingress or load balancer needed (nothing is exposed)
 # --secrets-encryption        : Kubernetes Secrets encrypted at rest on the server's disk
@@ -24,7 +33,8 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="$K3S_VERSION" sh -s - server
   --disable traefik \
   --disable servicelb \
   --secrets-encryption \
-  --write-kubeconfig-mode 600
+  --write-kubeconfig-mode 600 \
+  "${EXTRA_FLAGS[@]}"
 
 echo "==> Waiting for the node to be Ready"
 for _ in $(seq 1 30); do
