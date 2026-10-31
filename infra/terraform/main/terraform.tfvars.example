@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (ignored by Git) and fill in, or generate it:
+#   make tf-main-config
+
+compartment_ocid = "ocid1.compartment.oc1..replace-me" # bootstrap output compartment_ocid
+admin_cidr       = "203.0.113.10/32"                   # your public IP + /32
+# ssh_public_key_path = "~/.ssh/oci_dealhunter.pub"

@@ -59,7 +59,7 @@ flowchart LR
 
 ## Design notes
 
-- **Free by design.** Oracle Cloud Always Free ARM (2 OCPU / 12 GB), Travelpayouts free data API, GitHub free tier.
+- **Free by design.** Oracle Cloud Always Free (an AMD micro server today; Ampere ARM when the region has capacity), Travelpayouts free data API, GitHub free tier.
 - **ARM images.** The server is ARM, so images are built for `linux/arm64` (and `amd64` for local use).
 - **Prices are cached, not live.** The free price API returns recently searched fares (kept 2–7 days). Good for spotting drops; the price may change when opening the link. Coverage is strong 1–2 months ahead and thin further out — see [price-source.md](price-source.md).
 - **Deal windows.** Each instance defines windows of departure dates with their own rules (e.g. regular 30–180 days, last minute 7–29 days with stricter thresholds).
