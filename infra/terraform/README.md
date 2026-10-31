@@ -5,7 +5,7 @@ Infrastructure as Code for Oracle Cloud Always Free, in the home region **Spain 
 | Stack | Folder | Creates | State | Status |
 |---|---|---|---|---|
 | Bootstrap | [`bootstrap/`](bootstrap) | Project compartment, versioned private bucket for Terraform state, budget alert on any spend | Local file (`bootstrap/terraform.tfstate`, ignored by Git) | ✅ |
-| Main | (next PR) | Network (VCN, subnet, security rules) and the ARM VM (2 OCPU / 12 GB) | In the bucket, via the native `oci` backend | Phase 3 |
+| Main | [`main/`](main) | Network (VCN, internet gateway, route table, security list, public subnet) and the server: Ubuntu 24.04, 50 GB disk, either **AMD micro** (1/8 OCPU, 1 GB + 2 GB swap; default) or **Ampere A1 ARM** (1 OCPU / 6 GB), chosen with `server_type` | In the bucket, via the native `oci` backend (with locking) | ✅ |
 
 The bootstrap stack exists because the state bucket cannot hold the state of the stack that creates it. It is small, rarely changes, and every resource in it can be re-imported if its local state is lost.
 
@@ -20,6 +20,43 @@ make tf-bootstrap-apply   # type "yes" to confirm
 ```
 
 The outputs give the compartment OCID and the contents of `backend.hcl` for the main stack.
+
+Then the main stack:
+
+```bash
+make tf-main-config   # writes main/backend.hcl and main/terraform.tfvars (compartment + your public IP)
+make tf-init          # state backend: the bucket
+make tf-plan          # review: 6 resources to add
+make tf-apply         # type "yes"; prints the server's public IP
+make tf-ssh           # log in as ubuntu
+```
+
+| Main stack file | Contents |
+|---|---|
+| `network.tf` | VCN `10.0.0.0/16`, internet gateway, default route, security list (SSH **only from `admin_cidr`**, ICMP for path MTU), public subnet `10.0.1.0/24` |
+| `compute.tf` | Newest Ubuntu 24.04 ARM image, `VM.Standard.A1.Flex` instance with public IP and the SSH key; image and cloud-init changes do not replace a running server |
+| `cloud-init.yaml` | First boot: system updates, automatic security updates, UTC, no password logins |
+| `outputs.tf` | Public IP, SSH command, image and shape |
+
+**Which server** (`server_type` in `main/terraform.tfvars`):
+
+| Value | Shape | Why |
+|---|---|---|
+| `micro` (default) | `VM.Standard.E2.1.Micro`: 1/8 OCPU, 1 GB RAM + 2 GB swap | Always Free and nearly always available. Enough for single-node k3s running a twice-daily job |
+| `arm` | `VM.Standard.A1.Flex`: `ocpus` / `memory_gbs` (1 / 6 by default) | The better machine, but Madrid ran out of Ampere capacity for days (~1,300 attempts in Oct 2026) |
+
+Switching replaces the server: `server_type = "arm"`, `make tf-apply-retry`, then reinstall k3s and re-import the history (see `infra/k8s/README.md`).
+
+**Your IP changes** (home connections usually do): run `make tf-main-config && make tf-apply` to update the SSH rule.
+
+**Out of host capacity**: Ampere A1 capacity in a region is sometimes exhausted, for minutes or hours. Nothing is wrong with the code; the network is created and only the server is missing. `make tf-apply-retry` ([`scripts/apply-until-capacity.sh`](scripts/apply-until-capacity.sh)) retries every 3 minutes (up to 60 times; `ATTEMPTS` and `WAIT_SECONDS` change it). It applies without asking, so it only proceeds when the plan is exactly "create the server", checks with the OCI CLI (run through `uvx`, no install needed) that no untracked server with the same name exists, retries transient network errors, and stops on anything else. Each attempt uses the next fault domain.
+
+**Untracked server**: if a create is cut off by a network error, OCI may finish creating the server while Terraform never records it. The retry script detects this and stops. Copy the instance OCID from the console (*Compute → Instances*, compartment `bilbao-flight-deals`) and import it, so Terraform manages it instead of creating another:
+
+```bash
+terraform -chdir=infra/terraform/main import oci_core_instance.server <instance-ocid>
+make tf-plan    # expect "No changes" (or only in-place updates)
+```
 
 ## Rules
 
