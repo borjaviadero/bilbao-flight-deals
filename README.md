@@ -6,7 +6,7 @@ A self-hosted deal hunter that watches flight prices departing from **Bilbao (BI
 
 It runs 24/7 on a free cloud server, provisioned with **Terraform** and orchestrated with **Kubernetes (k3s)**, with every component packaged as a **Docker** image.
 
-> **Status:** ✅ Phase 0 (setup), Phase 1 (local flights watcher) and Phase 2 (Docker image + CI) done · 🚧 Phase 3 (Terraform) next. See the [roadmap](docs/roadmap.md).
+> **Status:** ✅ **In production** since 31 Oct 2026: a scheduled GitHub Actions workflow runs the image twice a day and alerts on Telegram. Terraform for Oracle Cloud and the k3s deployment are ready (Kubernetes is tested end to end in CI); the VM waits for Always Free capacity in Madrid. See the [roadmap](docs/roadmap.md).
 
 ---
 

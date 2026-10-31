@@ -7,8 +7,8 @@
 | 0. Setup | Repo conventions, local tools, Telegram bot, cloud and API accounts | Every item in the checklist below is ticked | ✅ Done |
 | 1. Local watcher | Flights watcher runs locally | First real deal alert arrives on Telegram | ✅ Done |
 | 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | ✅ Done |
-| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | 🚧 Next |
-| 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on | ⏳ |
+| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | 🟡 Code done; network applied; VM waiting for Oracle capacity |
+| 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on | 🟡 Manifests tested end to end in CI; production runs on a GitHub Actions schedule until the VM exists |
 | 5. Automation & ops | CI/CD, backups, monitoring | A merge to `main` deploys itself; alerts if something breaks | ⏳ |
 
 ### Phase 0 checklist
@@ -22,15 +22,15 @@
 
 ### Phase 4 checklist
 
-- [ ] Kubernetes manifests (namespace, volume, CronJob) validated in CI and tried on a local k3d cluster
-- [ ] k3s installed on the server; the CronJob runs at 09:00 and 21:00 Madrid time
-- [ ] An alert arrives with no laptop on — met first by the scheduled GitHub Actions workflow (production while Oracle has no capacity)
-- [ ] Kubernetes end to end in CI: k3d cluster, manifests applied, dry run of the watcher
+- [x] Kubernetes manifests (namespace, volume, CronJob) validated in CI and tried on a local k3d cluster
+- [ ] k3s installed on the server; the CronJob runs at 09:00 and 21:00 Madrid time (install script ready; needs the VM)
+- [x] An alert arrives with no laptop on — met by the scheduled GitHub Actions workflow (31 Oct 2026), production while Oracle has no capacity
+- [x] Kubernetes end to end in CI: k3d cluster, manifests applied, dry run of the watcher
 
 ### Phase 3 checklist
 
-- [ ] OCI API key and SSH key in WSL — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
-- [ ] Bootstrap stack: compartment, state bucket, budget alert
+- [x] OCI API key and SSH key in WSL — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
+- [x] Bootstrap stack: compartment, state bucket, budget alert
 - [ ] Main stack: network and ARM VM (2 OCPU / 12 GB), state in the bucket
 - [ ] SSH into the VM
 
