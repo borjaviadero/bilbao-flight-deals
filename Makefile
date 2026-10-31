@@ -109,3 +109,33 @@ tf-apply-retry:  ## Retry creating the server while OCI is out of ARM capacity (
 
 tf-ssh:  ## Log in to the server over SSH
 	$$($(TF_MAIN) output -raw ssh_command)
+
+# --- Kubernetes (Phase 4) ---------------------------------------------------------
+# Uses the current kubectl context: k3d-dealhunter locally, the server later.
+
+.PHONY: k8s-local-up k8s-local-down k8s-apply k8s-secret k8s-dry-run k8s-status
+
+K8S_NS = dealhunter
+K3D_CLUSTER ?= dealhunter
+
+k8s-local-up:  ## Create a local k3s cluster in Docker with k3d (for testing)
+	k3d cluster create $(K3D_CLUSTER) --wait
+
+k8s-local-down:  ## Delete the local k3d cluster
+	k3d cluster delete $(K3D_CLUSTER)
+
+k8s-apply:  ## Apply the manifests in infra/k8s (namespace, volume, CronJob)
+	kubectl apply -k infra/k8s
+
+k8s-secret:  ## Create or update the Secret dealhunter-secrets from .env
+	@test -f .env || { echo "Missing .env - copy .env.example and fill it in"; exit 1; }
+	kubectl -n $(K8S_NS) create secret generic dealhunter-secrets --from-env-file=.env \
+		--dry-run=client -o yaml | kubectl apply -f -
+
+k8s-dry-run:  ## Run the watcher once now in the cluster, in dry-run mode, and show its output
+	@job=$$(kubectl create -f infra/k8s/jobs/dry-run.yaml -o name) && echo "$$job" && \
+	kubectl -n $(K8S_NS) wait --for=condition=complete --timeout=600s $$job; \
+	kubectl -n $(K8S_NS) logs $$job
+
+k8s-status:  ## Show the CronJob, recent jobs, pods and the volume
+	kubectl -n $(K8S_NS) get cronjob,job,pod,pvc

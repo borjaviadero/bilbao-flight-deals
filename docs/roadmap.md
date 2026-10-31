@@ -6,8 +6,8 @@
 |---|---|---|---|
 | 0. Setup | Repo conventions, local tools, Telegram bot, cloud and API accounts | Every item in the checklist below is ticked | ✅ Done |
 | 1. Local watcher | Flights watcher runs locally | First real deal alert arrives on Telegram | ✅ Done |
-| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | 🚧 Next |
-| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | ⏳ |
+| 2. Docker | Watcher packaged as an image | Image published to GHCR by GitHub Actions | ✅ Done |
+| 3. Terraform | Free Oracle Cloud VM created from code | `terraform apply` creates network + VM | 🚧 Next |
 | 4. Kubernetes | System running 24/7 on k3s | Alerts arrive without any laptop on | ⏳ |
 | 5. Automation & ops | CI/CD, backups, monitoring | A merge to `main` deploys itself; alerts if something breaks | ⏳ |
 
@@ -20,6 +20,12 @@
 - [x] Travelpayouts account and API token — see [price-source.md](price-source.md)
 - [x] Oracle Cloud Always Free account — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
 
+### Phase 4 checklist
+
+- [ ] Kubernetes manifests (namespace, volume, CronJob) validated in CI and tried on a local k3d cluster
+- [ ] k3s installed on the server; the CronJob runs at 09:00 and 21:00 Madrid time
+- [ ] An alert arrives with no laptop on
+
 ### Phase 3 checklist
 
 - [ ] OCI API key and SSH key in WSL — see [oracle-cloud-setup.md](oracle-cloud-setup.md)
@@ -29,9 +35,9 @@
 
 ### Phase 2 checklist
 
-- [ ] Dockerfile for the flights watcher and `make docker-*` targets; same results as `make run`
-- [ ] GitHub Actions: `make check` on every pull request
-- [ ] GitHub Actions: image built for `amd64` and `arm64` and pushed to GHCR on every merge to `main`
+- [x] Dockerfile for the flights watcher and `make docker-*` targets; same results as `make run`
+- [x] GitHub Actions: `make check` on every pull request
+- [x] GitHub Actions: image built for `amd64` and `arm64` and pushed to GHCR on every merge to `main` (public package `ghcr.io/borjaviadero/flights-watcher`, first published 27 Oct 2026)
 
 ### Phase 1 checklist
 
