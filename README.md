@@ -101,6 +101,12 @@ make docker-dry-run  # same dry run, in the container
 make docker-run      # same full run, in the container (history in a Docker volume)
 ```
 
+## Production
+
+The watcher runs on a schedule in **GitHub Actions** ([`watch-flights.yml`](.github/workflows/watch-flights.yml)): at 09:00 and 21:00 (Madrid, winter time) a runner pulls the image from GHCR and runs it, with the tokens from repository secrets and the SQLite price history carried between runs in the Actions cache. It can also be started by hand from the Actions tab, with a dry-run option.
+
+The Oracle Cloud server (Terraform, [`infra/terraform`](infra/terraform)) and the k3s deployment ([`infra/k8s`](infra/k8s)) are ready; Madrid has been out of Always Free capacity, so the Kubernetes manifests are exercised end to end in CI on a k3d cluster until the server can be created.
+
 Every merge to `main` publishes the image for `amd64` and `arm64` as `ghcr.io/borjaviadero/flights-watcher` (tags `latest` and `sha-<commit>`).
 
 Run `make help` to list all tasks.
