@@ -24,7 +24,8 @@
 
 - [ ] Kubernetes manifests (namespace, volume, CronJob) validated in CI and tried on a local k3d cluster
 - [ ] k3s installed on the server; the CronJob runs at 09:00 and 21:00 Madrid time
-- [ ] An alert arrives with no laptop on
+- [ ] An alert arrives with no laptop on — met first by the scheduled GitHub Actions workflow (production while Oracle has no capacity)
+- [ ] Kubernetes end to end in CI: k3d cluster, manifests applied, dry run of the watcher
 
 ### Phase 3 checklist
 

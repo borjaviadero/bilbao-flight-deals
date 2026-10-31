@@ -1,0 +1,79 @@
+# Production: runs the flights watcher on a schedule on GitHub's servers, so alerts
+# arrive with no laptop on. Uses the image published by ci.yml.
+#
+#   schedule           09:00 and 21:00 Madrid time in winter (CET). GitHub schedules are
+#                      UTC only: in summer (CEST) the runs are at 10:00 and 22:00. GitHub
+#                      may start scheduled runs a few minutes late.
+#   workflow_dispatch  run it by hand from the Actions tab (with an optional dry run).
+#
+# Secrets (Settings → Secrets and variables → Actions): TRAVELPAYOUTS_API_TOKEN,
+# TELEGRAM_BOT_TOKEN, TELEGRAM_FLIGHTS_CHAT_ID, TELEGRAM_FLIGHTS_BIO_TOPIC_ID.
+# The SQLite price history is kept between runs in the GitHub Actions cache.
+
+name: Watch flights
+
+on:
+  schedule:
+    - cron: "0 8,20 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: print the messages instead of sending them, store nothing"
+        type: boolean
+        default: true
+
+# One run at a time: they share the price history.
+concurrency:
+  group: watch-flights
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/borjaviadero/flights-watcher:latest
+  INSTANCE: flights-bio
+  HISTORY_KEY_PREFIX: flights-bio-history-
+
+jobs:
+  run:
+    name: flights-bio
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Restore the price history
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: ${{ env.HISTORY_KEY_PREFIX }}${{ github.run_id }}
+          restore-keys: ${{ env.HISTORY_KEY_PREFIX }}
+
+      - name: Let the container user write the history
+        run: |
+          mkdir -p data
+          chmod -R a+rwX data
+          ls -l data
+
+      - name: Run the watcher
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          TRAVELPAYOUTS_API_TOKEN: ${{ secrets.TRAVELPAYOUTS_API_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_FLIGHTS_CHAT_ID: ${{ secrets.TELEGRAM_FLIGHTS_CHAT_ID }}
+          TELEGRAM_FLIGHTS_BIO_TOPIC_ID: ${{ secrets.TELEGRAM_FLIGHTS_BIO_TOPIC_ID }}
+        run: |
+          args=(run --config "config/watchers/${INSTANCE}.yaml")
+          if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
+          # -e NAME passes the variable from this step's environment without printing it.
+          docker run --rm \
+            -e TRAVELPAYOUTS_API_TOKEN -e TELEGRAM_BOT_TOKEN \
+            -e TELEGRAM_FLIGHTS_CHAT_ID -e TELEGRAM_FLIGHTS_BIO_TOPIC_ID \
+            -v "$PWD/data:/data" \
+            "$IMAGE" "${args[@]}"
+
+      - name: Save the price history
+        if: success() && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: ${{ env.HISTORY_KEY_PREFIX }}${{ github.run_id }}
