@@ -15,13 +15,13 @@ Adding a new **watcher** means adding a new folder under `watchers/` that implem
 
 ```mermaid
 sequenceDiagram
-    participant K as Kubernetes CronJob
+    participant K as Scheduler (GitHub Actions today, Kubernetes CronJob on the server)
     participant W as Watcher (flights-bio)
     participant API as Price API
-    participant DB as SQLite (PostgreSQL later)
+    participant DB as SQLite
     participant TG as Telegram
 
-    K->>W: run every few hours
+    K->>W: run at 09:00 and 21:00
     W->>API: fetch round-trip fares from BIO
     API-->>W: fares
     W->>W: apply filters (stops, departure window)
@@ -48,19 +48,29 @@ Display names are free text. One bot serves every group. Each instance config na
 
 ## Where it runs
 
+**Today (production):** a scheduled GitHub Actions workflow pulls the image and runs it; the price history is kept in the Actions cache.
+
 ```mermaid
 flowchart LR
-    GH["GitHub<br/>code + Actions"] -->|build & push image| GHCR["GitHub Container Registry"]
-    TF["Terraform"] -->|creates| VM["Oracle Cloud VM<br/>Always Free (ARM)"]
-    VM --> K3S["k3s cluster"]
-    GHCR -->|pull image| K3S
+    CI["GitHub Actions · CI<br/>tests · Terraform validate · k3d end-to-end"] -->|build & push| GHCR["GitHub Container Registry<br/>amd64 + arm64"]
+    SCHED["GitHub Actions · schedule<br/>09:00 / 21:00"] -->|pull & run| GHCR
+    SCHED --> TGAPI["Telegram"]
+```
+
+**Target (ready, waiting for Oracle capacity):** Terraform creates the Always Free VM and network; k3s runs the same image as a CronJob, reached only through an SSH tunnel.
+
+```mermaid
+flowchart LR
+    TF["Terraform<br/>state in OCI Object Storage"] -->|creates| VM["Oracle Cloud VM<br/>AMD micro or Ampere ARM"]
+    VM --> K3S["k3s · CronJob flights-bio"]
+    GHCR["GHCR"] -->|pull image| K3S
     K3S --> TGAPI["Telegram"]
 ```
 
 ## Design notes
 
 - **Free by design.** Oracle Cloud Always Free (an AMD micro server today; Ampere ARM when the region has capacity), Travelpayouts free data API, GitHub free tier.
-- **ARM images.** The server is ARM, so images are built for `linux/arm64` (and `amd64` for local use).
+- **Multi-arch images.** Images are built for `linux/amd64` (GitHub runners, the AMD micro server, laptops) and `linux/arm64` (the Ampere server).
 - **Prices are cached, not live.** The free price API returns recently searched fares (kept 2–7 days). Good for spotting drops; the price may change when opening the link. Coverage is strong 1–2 months ahead and thin further out — see [price-source.md](price-source.md).
 - **Deal windows.** Each instance defines windows of departure dates with their own rules (e.g. regular 30–180 days, last minute 7–29 days with stricter thresholds).
 - **Usual price.** Median of the route's prices seen in the last 30 days (needs at least 5). The median ignores one-off outliers better than the mean. A price is compared with the history *before* it is recorded.
