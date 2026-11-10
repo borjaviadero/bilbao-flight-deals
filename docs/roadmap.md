@@ -55,6 +55,7 @@ Until Phase 4 the watcher runs only when started by hand (`make run`); the `sche
 | Version | Adds |
 |---|---|
 | 1.1 | ✅ Long-haul instances for Madrid and Barcelona (`flights-mad`, `flights-bcn`): new config files, same watcher and image; usual price per route and departure month |
+| 1.2 | ✅ Super deals of every instance in the group's General topic (`super_deals` in each config) |
 | 2 | More departure airports or instances — new config files, same watcher |
 | 3 | Clothes watcher, with instances per shop or size |
 | 4 | Watches watcher, or other categories |

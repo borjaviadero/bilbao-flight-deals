@@ -21,7 +21,7 @@ class TelegramError(Exception):
 
 
 class TelegramNotifier:
-    """Posts HTML-formatted messages to one chat topic."""
+    """Posts HTML-formatted messages to one chat topic (or the group's General topic)."""
 
     def __init__(self, token: str, target: ResolvedTelegramTarget, http: JsonHttpClient) -> None:
         self._token = token
@@ -34,11 +34,12 @@ class TelegramNotifier:
             raise TelegramError(f"message too long ({len(text)} > {MAX_MESSAGE_LENGTH} chars)")
         payload: dict[str, Any] = {
             "chat_id": self._target.chat_id,
-            "message_thread_id": self._target.topic_id,
             "text": text,
             "parse_mode": "HTML",
             "link_preview_options": {"is_disabled": True},
         }
+        if self._target.topic_id is not None:  # no topic: the group's General topic
+            payload["message_thread_id"] = self._target.topic_id
         try:
             response = self._http.post_json(f"{API_BASE}/bot{self._token}/sendMessage", payload)
         except HttpError as exc:

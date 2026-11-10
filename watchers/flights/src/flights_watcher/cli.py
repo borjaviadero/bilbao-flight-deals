@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from dealhunter_core.config import ConfigError, require_env
+from dealhunter_core.config import ConfigError, ResolvedTelegramTarget, int_env, require_env
 from dealhunter_core.history import PriceHistory
 from dealhunter_core.http import HttpError, JsonHttpClient, Transport, urllib_transport
 from dealhunter_core.telegram import TelegramError, TelegramNotifier
@@ -130,11 +130,19 @@ def _run(
     client = TravelpayoutsClient(require_env(TOKEN_ENV, env), http)
 
     send: Sender
+    send_super: Sender | None = None
     if args.dry_run:
         send = _do_not_send
     else:  # fail fast on missing Telegram settings, before calling the price API
         target = config.telegram.resolve(env)
-        send = TelegramNotifier(require_env(BOT_TOKEN_ENV, env), target, http).send
+        bot_token = require_env(BOT_TOKEN_ENV, env)
+        send = TelegramNotifier(bot_token, target, http).send
+        if (rule := config.super_deals) is not None:
+            super_target = ResolvedTelegramTarget(
+                chat_id=target.chat_id,
+                topic_id=int_env(rule.topic_id_env, env) if rule.topic_id_env else None,
+            )
+            send_super = TelegramNotifier(bot_token, super_target, http).send
 
     db_path = args.db or Path(env.get(DB_ENV) or DEFAULT_DB)
     with PriceHistory(db_path) as history:
@@ -143,6 +151,7 @@ def _run(
             client,
             history,
             send,
+            send_super=send_super,
             now=now,
             timezone=TIMEZONE,
             dry_run=args.dry_run,
@@ -151,13 +160,18 @@ def _run(
 
     if args.dry_run:
         separator = "\n" + "-" * 60 + "\n"
-        print(separator.join(report.messages) if report.messages else "(no messages)")
+        shown = [
+            f"[→ General: super deal]\n{text}" if target == "super" else text
+            for target, text in zip(report.targets, report.messages, strict=True)
+        ]
+        print(separator.join(shown) if shown else "(no messages)")
         print(separator.rstrip())
     mode = "DRY RUN — nothing sent or stored" if args.dry_run else f"history: {db_path}"
     print(
         f"{'warm-up · ' if report.warmup else ''}{report.fetched} fetched · "
         f"{report.candidates} candidates · {report.deals} deals · "
-        f"{report.alerts_sent} alerts · {report.in_summary} in summary · "
+        f"{report.alerts_sent} alerts ({report.super_deals} super) · "
+        f"{report.in_summary} in summary · "
         f"{report.skipped_repeats} repeats skipped · {mode}"
     )
     return 0

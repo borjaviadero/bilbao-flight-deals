@@ -118,7 +118,7 @@ class ResolvedTelegramTarget(StrictModel):
     """Telegram destination with the IDs already read from the environment."""
 
     chat_id: int
-    topic_id: int
+    topic_id: int | None = None  # None: the group's General topic
 
 
 class TelegramTarget(StrictModel):
@@ -214,6 +214,11 @@ def require_env(name: str, environ: Mapping[str, str] | None = None) -> str:
     if not value:
         raise ConfigError(f"environment variable {name} is not set (see .env.example)")
     return value
+
+
+def int_env(name: str, environ: Mapping[str, str] | None = None) -> int:
+    """An environment variable that must be set and hold an integer."""
+    return _int_env(name, os.environ if environ is None else environ)
 
 
 def _int_env(name: str, environ: Mapping[str, str]) -> int:

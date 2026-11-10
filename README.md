@@ -23,6 +23,8 @@ It is packaged as a **Docker** image and runs twice a day on a **GitHub Actions*
    | 7 – 29 days | ≥ 50% below usual **or** ≤ €30 per person | ⚡ Super deal · last minute |
 5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
 
+**Super deals** from any city — e.g. ≤ €20 per person from Bilbao, or ≥ 50% below usual with a real saving and a reasonable itinerary — go to the group's **General topic** instead of the city topic, so the city topics can be muted and only the best deals notify.
+
 It also watches **long-haul** departures from **Madrid** and **Barcelona**, where the savings justify travelling there from Bilbao:
 
 | Instance | Watches | Trip length | Alert if |

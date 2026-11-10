@@ -63,6 +63,20 @@ deal_windows:
       - type: max_price_per_person
         amount: 30
 
+# Super deals: the best deals, posted to the group's General topic INSTEAD of this topic.
+# Short and medium haul: people think in euros, so a very low price qualifies on its own;
+# a big percentage only counts with a real saving (50 % of 40 € is not a super deal).
+super_deals:
+  label:
+    en: "🔥 Super deal"
+    es: "🔥 Superchollo"
+  max_price_per_person: 20     # path 1: 20 € or less per person, round trip
+  min_drop_percent: 50         # path 2: at least 50 % below usual...
+  min_saving_per_person: 40    # ...and at least 40 € saved per person
+  min_observations: 10         # usual price backed by at least 10 prices (deals need 5)
+  max_detour_factor: 1.75      # with a stop, each leg <= 1.75 x the direct flight time
+  topic_id_env: null           # null = the group's General topic
+
 alerts:
   repeat_only_if_lower: true   # don't re-alert the same flight unless the price drops further
   max_per_run: 20              # safety cap: best 20 deals as alerts, any others in one summary

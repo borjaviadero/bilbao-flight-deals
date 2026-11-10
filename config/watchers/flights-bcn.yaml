@@ -59,6 +59,20 @@ deal_windows:
         lookback_days: 30
         min_observations: 5
 
+# Super deals: the best deals, posted to the group's General topic INSTEAD of this topic.
+# Long haul: the percentage matters; the saving must clearly beat the trip from Bilbao.
+# A fixed euro threshold (e.g. cents per km) is left until the trial gives real data.
+super_deals:
+  label:
+    en: "🔥 Long-haul super deal"
+    es: "🔥 Superchollo largo radio"
+  min_drop_percent: 50         # at least 50 % below usual (same route and month)...
+  min_saving_per_person: 150   # ...and at least 150 € saved per person
+  min_observations: 10         # usual price backed by at least 10 prices (deals need 5)
+  max_detour_factor: 1.75      # with a stop, each leg <= 1.75 x the direct flight time
+                               # (e.g. Madrid-New York: ~8 h direct, so at most ~13.5 h)
+  topic_id_env: null           # null = the group's General topic
+
 alerts:
   repeat_only_if_lower: true
   max_per_run: 20

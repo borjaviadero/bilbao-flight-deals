@@ -172,3 +172,36 @@ def test_messages_are_spaced_out() -> None:
         )
     assert len(sent) == 2
     assert pauses == [SEND_INTERVAL_SECONDS]  # between messages, not before the first
+
+
+def test_super_deals_go_to_the_general_topic_only() -> None:
+    topic: list[str] = []
+    general: list[str] = []
+    fares = [*DEFAULT_FARES, fare("LIS", 18, "2026-12-10", "2026-12-14")]  # 18 € pp: super
+    with PriceHistory.in_memory() as h:
+        run(h, [])  # warm-up
+        report = run_instance(
+            config(),
+            client(fares),
+            h,
+            topic.append,
+            send_super=general.append,
+            now=NOW + timedelta(hours=6),
+            timezone=MADRID,
+            pause=lambda _: None,
+        )
+    assert report.super_deals == 1
+    assert len(general) == 1 and general[0].startswith("<b>🔥 Superchollo · Bilbao → LIS")
+    assert not any("LIS" in text for text in topic)  # not repeated in the city topic
+    assert len(topic) == 2  # MXP and VLC stay in the city topic
+    assert report.alerts_sent == 3
+
+
+def test_without_a_super_sender_super_deals_use_the_topic() -> None:
+    sent: list[str] = []
+    fares = [fare("LIS", 18, "2026-12-10", "2026-12-14")]
+    with PriceHistory.in_memory() as h:
+        run(h, [], fares=fares)
+        sent.clear()
+        run(h, sent, now=NOW + timedelta(hours=6), fares=fares)
+    assert len(sent) == 1 and "🔥 Superchollo" in sent[0]

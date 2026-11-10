@@ -69,3 +69,15 @@ def test_http_error_includes_telegram_reason() -> None:
     bot, _ = notifier(HttpResponse(400, body))
     with pytest.raises(TelegramError, match="HTTP 400: Bad Request: chat not found"):
         bot.send("x")
+
+
+def test_general_topic_has_no_thread_id() -> None:
+    general = ResolvedTelegramTarget(chat_id=-1001, topic_id=None)
+    seen: list[dict[str, object]] = []
+
+    def transport(request: urllib.request.Request, timeout: float) -> HttpResponse:
+        seen.append(json.loads(request.data))  # type: ignore[arg-type]
+        return HttpResponse(200, b'{"ok": true}')
+
+    TelegramNotifier("tok", general, JsonHttpClient(transport=transport)).send("hi")
+    assert "message_thread_id" not in seen[0] and seen[0]["chat_id"] == -1001

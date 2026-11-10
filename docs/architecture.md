@@ -42,7 +42,10 @@ Telegram groups can have **topics**, but topics cannot be nested. Three levels a
 |---|---|---|
 | Whole system | Chat folder | "Deals" |
 | Watcher | Group (supergroup with topics) | "Flights" |
-| Instance | Topic inside the group | "Bilbao" |
+| Instance | Topic inside the group | "Bilbao", "Madrid", "Barcelona" |
+| Super deals of every instance | The group's General topic | "Destacados" |
+
+**Super deals** — rare deals with a large saving and a reasonable itinerary — are posted to the General topic *instead of* the instance topic, so the instance topics can be muted and only the General topic notifies. Criteria per instance in `super_deals` (see [`super_deals.py`](../watchers/flights/src/flights_watcher/super_deals.py)).
 
 Display names are free text. One bot serves every group. Each instance config names the environment variables that hold its group and topic IDs (`chat_id_env`, `topic_id_env`), so no IDs live in the repository. Setup steps: [telegram-setup.md](telegram-setup.md).
 
