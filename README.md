@@ -28,7 +28,7 @@ It also watches **long-haul** departures from **Madrid** and **Barcelona**, wher
 | Instance | Watches | Trip length | Alert if |
 |---|---|---|---|
 | `flights-bio` | Bilbao, any destination | 2–7 / 3–10 / 6–21 nights by flight time | as above |
-| `flights-mad`, `flights-bcn` | Madrid / Barcelona, outbound flight > 6 h, outside Spain | 7–21 nights | ≥ 30% below usual (≥ 50% in the last-minute window), compared within the same departure month |
+| `flights-mad`, `flights-bcn` | Madrid / Barcelona, destinations ≥ 4,500 km away (great-circle), outside Spain | 7–21 nights | ≥ 30% below usual (≥ 50% in the last-minute window), compared within the same departure month |
 6. **Summarises** the best fares every Sunday (planned).
 
 Example alert:

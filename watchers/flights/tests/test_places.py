@@ -10,10 +10,13 @@ from dealhunter_core.history import PriceHistory
 from dealhunter_core.http import HttpResponse, JsonHttpClient
 from flights_watcher.places import (
     airline_names,
+    city_coordinates,
     city_countries,
     city_names,
+    distance_km,
     parse_airlines,
     parse_cities,
+    parse_city_coordinates,
     parse_city_countries,
 )
 
@@ -89,3 +92,20 @@ def test_city_countries() -> None:
         assert city_countries(client, h, NOW)["TCI"] == "ES"
         assert city_countries(client, h, NOW)["MIL"] == "IT"  # cached
     assert calls == ["https://api.travelpayouts.com/data/en/cities.json"]
+
+
+def test_city_coordinates_and_distance() -> None:
+    payload = [
+        {"code": "MAD", "coordinates": {"lat": 40.42, "lon": -3.70}},
+        {"code": "NYC", "coordinates": {"lat": 40.71, "lon": -74.01}},
+        {"code": "XXX"},
+    ]
+    assert parse_city_coordinates(payload) == {"MAD": "40.42,-3.7", "NYC": "40.71,-74.01"}
+    calls: list[str] = []
+    client = http([HttpResponse(200, json.dumps(payload).encode())], calls)
+    with PriceHistory.in_memory() as h:
+        points = city_coordinates(client, h, NOW)
+        assert city_coordinates(client, h, NOW) == points  # cached
+    assert points["NYC"] == (40.71, -74.01)
+    assert 5700 < distance_km(points["MAD"], points["NYC"]) < 5900
+    assert distance_km(points["MAD"], points["MAD"]) == 0

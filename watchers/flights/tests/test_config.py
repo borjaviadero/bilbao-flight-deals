@@ -105,7 +105,8 @@ def test_long_haul_instances(code: str) -> None:
     origin = code.upper()
     cfg = load_config(CONFIG_DIR / f"flights-{code}.yaml")
     s = cfg.search
-    assert (s.origin, s.min_flight_hours, s.exclude_countries) == (origin, 6, ["ES"])
+    assert (s.origin, s.min_distance_km, s.exclude_countries) == (origin, 4500, ["ES"])
+    assert s.city_names == {origin: {"MAD": "Madrid", "BCN": "Barcelona"}[origin]}
     assert s.usual_price_by == "route_month"
     assert not s.nights_allowed(700, 6) and s.nights_allowed(700, 7)
     assert s.nights_allowed(700, 21) and not s.nights_allowed(700, 22)

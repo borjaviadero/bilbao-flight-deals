@@ -17,14 +17,18 @@ search:
   trip: round_trip
   passengers: 2
   currency: EUR
-  min_flight_hours: 6          # long haul only: outbound flight of more than 6 h
-                               # (the Americas, the Gulf, Asia, sub-Saharan Africa, Oceania)
+  min_distance_km: 4500        # long haul only: at least 4,500 km away (~6 h direct)
+                               # e.g. New York ~5,800 · Dubai ~5,600 · Mexico City ~9,000;
+                               # leaves out Europe, North Africa, Egypt, Armenia...
+                               # (flight time is not used: with a stop it includes the layover)
   exclude_countries: [ES]      # international only
   trip_length:
     - min_nights: 7            # at least a week; at most three
       max_nights: 21
   max_stops: 1                 # direct or 1 stop on each leg
   usual_price_by: route_month  # long-haul prices are seasonal: compare within the same month
+  city_names:                  # override names from the data file ("Ciudad de ...")
+    BCN: Barcelona
 
 # No fixed euro caps: a long-haul round trip never costs 40 € per person, so only the
 # drop against the usual price (same route, same departure month) decides.

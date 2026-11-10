@@ -8,6 +8,7 @@ from datetime import date, timedelta
 
 from flights_watcher.config import FlightsInstanceConfig
 from flights_watcher.models import Candidate, Fare
+from flights_watcher.places import distance_km
 from flights_watcher.price_api import TravelpayoutsClient
 
 logger = logging.getLogger(__name__)
@@ -58,11 +59,13 @@ def select_candidates(
     config: FlightsInstanceConfig,
     today: date,
     countries: Mapping[str, str] | None = None,
+    coordinates: Mapping[str, tuple[float, float]] | None = None,
 ) -> list[Candidate]:
     """Keep fares that fit the search and fall into a deal window.
 
-    Drops fares to an ``exclude_countries`` destination, with an outbound flight not
-    longer than ``min_flight_hours``, with too many stops, with stops on a trip to a
+    Drops fares to an ``exclude_countries`` destination, to a destination closer than
+    ``min_distance_km`` (``coordinates`` maps city codes to (lat, lon); unknown places
+    are dropped when that filter is set), with too many stops, with stops on a trip to a
     ``direct_only_countries`` destination (``countries`` maps city codes to countries;
     unknown cities are kept), with a trip length that does not fit the flight time, or
     departing outside every window; removes duplicates
@@ -74,7 +77,7 @@ def select_candidates(
             continue
         if _country(fare, countries or {}) in config.search.exclude_countries:
             continue
-        if (hours := config.search.min_flight_hours) and fare.outbound_minutes <= hours * 60:
+        if config.search.min_distance_km and not _far_enough(fare, config, coordinates or {}):
             continue
         if fare.max_stops > config.search.max_stops:
             continue
@@ -102,6 +105,24 @@ def _direct_only(fare: Fare, config: FlightsInstanceConfig, countries: Mapping[s
     """Whether the destination's country only accepts direct flights."""
     country = _country(fare, countries)
     return country is not None and country in config.search.direct_only_countries
+
+
+def _far_enough(
+    fare: Fare, config: FlightsInstanceConfig, coordinates: Mapping[str, tuple[float, float]]
+) -> bool:
+    """Whether the destination is at least ``min_distance_km`` from the origin."""
+    origin = coordinates.get(fare.origin_airport) or coordinates.get(config.search.origin)
+    destination = coordinates.get(fare.destination_city) or coordinates.get(
+        fare.destination_airport
+    )
+    if origin is None or destination is None:
+        return False
+    return distance_km(origin, destination) >= (config.search.min_distance_km or 0)
+
+
+def needs_coordinates(config: FlightsInstanceConfig) -> bool:
+    """Whether the filters need each place's coordinates."""
+    return config.search.min_distance_km is not None
 
 
 def needs_countries(config: FlightsInstanceConfig) -> bool:
