@@ -24,10 +24,15 @@ from dealhunter_core.http import HttpError, JsonHttpClient, Transport, urllib_tr
 from dealhunter_core.telegram import TelegramError, TelegramNotifier
 from flights_watcher.config import load_config
 from flights_watcher.models import Candidate
-from flights_watcher.places import city_countries
+from flights_watcher.places import city_coordinates, city_countries
 from flights_watcher.price_api import PriceApiError, TravelpayoutsClient
 from flights_watcher.runner import Sender, run_instance
-from flights_watcher.search import fetch_fares, needs_countries, select_candidates
+from flights_watcher.search import (
+    fetch_fares,
+    needs_coordinates,
+    needs_countries,
+    select_candidates,
+)
 
 logger = logging.getLogger("flights_watcher")
 
@@ -100,10 +105,13 @@ def _search(
     today = now.astimezone(TIMEZONE).date()
     fares = fetch_fares(config, client, today)
     countries: dict[str, str] = {}
-    if needs_countries(config):
-        with PriceHistory.in_memory() as scratch:  # read-only command: nothing is kept
+    coordinates: dict[str, tuple[float, float]] = {}
+    with PriceHistory.in_memory() as scratch:  # read-only command: nothing is kept
+        if needs_countries(config):
             countries = city_countries(http, scratch, now)
-    candidates = select_candidates(fares, config, today, countries)
+        if needs_coordinates(config):
+            coordinates = city_coordinates(http, scratch, now)
+    candidates = select_candidates(fares, config, today, countries, coordinates)
 
     print(format_candidates(candidates[: args.limit], passengers=config.search.passengers))
     print(

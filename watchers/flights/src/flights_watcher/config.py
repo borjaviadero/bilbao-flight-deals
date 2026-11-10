@@ -45,10 +45,13 @@ class FlightSearch(StrictModel):
         default_factory=list, description="Nights allowed by flight time; empty = any length"
     )
     max_stops: int = Field(ge=0, le=2, description="Maximum stops on each leg")
-    min_flight_hours: float | None = Field(
+    min_distance_km: float | None = Field(
         default=None,
         gt=0,
-        description="Only trips whose outbound flight lasts more than this (e.g. 6 = long haul)",
+        description=(
+            "Only destinations at least this far, great-circle (e.g. 4500 = long haul). "
+            "Flight time is not used for this: with a stop it includes the layover."
+        ),
     )
     exclude_countries: list[str] = Field(
         default_factory=list,

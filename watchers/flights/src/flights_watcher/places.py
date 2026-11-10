@@ -2,6 +2,7 @@
 
 - City names for messages (``MIL`` → ``Milán``), from ``/data/<lang>/cities.json``.
 - City countries for filters (``TCI`` → ``ES``), from ``/data/en/cities.json``.
+- City coordinates for distance filters (``NYC`` → 40.71,-74.01), from the same file.
 - Airline names for messages (``V7`` → ``Volotea``), from ``/data/en/airlines.json``
   (airline names are brand names, so English is used).
 
@@ -13,6 +14,7 @@ filters that need a country are skipped for the unknown cities.
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta
 from typing import Any
@@ -48,6 +50,38 @@ def parse_city_countries(payload: Any) -> dict[str, str]:
         for item in payload
         if isinstance(item, Mapping) and item.get("code") and item.get("country_code")
     }
+
+
+def parse_city_coordinates(payload: Any) -> dict[str, str]:
+    """City code → ``"lat,lon"`` from the ``coordinates`` of each entry.
+
+    ``{"code": "NYC", "coordinates": {"lat": 40.7, "lon": -74.0}}`` → ``"NYC": "40.7,-74.0"``.
+    Stored as text so it fits the same cache as the other reference lists.
+    """
+    if not isinstance(payload, list):
+        return {}
+    coordinates: dict[str, str] = {}
+    for item in payload:
+        if not isinstance(item, Mapping) or not item.get("code"):
+            continue
+        point = item.get("coordinates")
+        if (
+            isinstance(point, Mapping)
+            and point.get("lat") is not None
+            and point.get("lon") is not None
+        ):
+            coordinates[str(item["code"])] = f"{float(point['lat'])},{float(point['lon'])}"
+    return coordinates
+
+
+def distance_km(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Great-circle distance between two (lat, lon) points, in kilometres."""
+    lat1, lon1, lat2, lon2 = map(math.radians, (*a, *b))
+    h = (
+        math.sin((lat2 - lat1) / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+    )
+    return 2 * 6371.0 * math.asin(math.sqrt(h))
 
 
 def parse_airlines(payload: Any) -> dict[str, str]:
@@ -104,6 +138,27 @@ def city_countries(
         now=now,
         store=store,
     )
+
+
+def city_coordinates(
+    http: JsonHttpClient, history: PriceHistory, now: datetime, *, store: bool = True
+) -> dict[str, tuple[float, float]]:
+    """City code → (lat, lon). See :func:`_reference_names`."""
+    raw = _reference_names(
+        http,
+        history,
+        url=CITIES_URL.format(language="en"),
+        cache_name="city-coordinates",
+        parse=parse_city_coordinates,
+        what="city coordinates",
+        now=now,
+        store=store,
+    )
+    points: dict[str, tuple[float, float]] = {}
+    for code, text in raw.items():
+        lat, _, lon = text.partition(",")
+        points[code] = (float(lat), float(lon))
+    return points
 
 
 def airline_names(

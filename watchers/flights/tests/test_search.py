@@ -135,42 +135,37 @@ def long_haul_config() -> FlightsInstanceConfig:
     return load_config(REPO_ROOT / "config" / "watchers" / "flights-mad.yaml")
 
 
-def test_select_long_haul_international_only() -> None:
-    countries = {"NYC": "US", "TCI": "ES", "RAK": "MA"}
+COORDINATES = {
+    "MAD": (40.42, -3.70),
+    "NYC": (40.71, -74.01),  # ~5,800 km
+    "TCI": (28.47, -16.25),  # Tenerife, ~1,800 km (and Spain)
+    "EVN": (40.18, 44.51),  # Yerevan, ~3,950 km
+    "BER": (52.52, 13.40),  # ~1,900 km
+}
+
+
+def test_select_long_haul_by_distance_not_flight_time() -> None:
+    countries = {"NYC": "US", "TCI": "ES", "EVN": "AM", "BER": "DE"}
     week = {"return_at": datetime(2026, 12, 20, 10, 0)}  # 14 nights from day 40
-    nyc = replace(
-        fare(
-            40,
-            "400",
-            origin_airport="MAD",
-            destination_airport="JFK",
-            destination_city="NYC",
-            outbound_minutes=500,
-        ),
-        **week,
-    )
-    canary = replace(
-        fare(
-            40,
-            "300",
-            origin_airport="MAD",
-            destination_airport="TFN",
-            destination_city="TCI",
-            outbound_minutes=400,
-        ),
-        **week,
-    )  # > 6 h, Spain
-    marrakech = replace(
-        fare(
-            40,
-            "90",
-            origin_airport="MAD",
-            destination_airport="RAK",
-            destination_city="RAK",
-            outbound_minutes=90,
-        ),
-        **week,
-    )  # short haul
+
+    def trip(dest: str, city: str, price: str, minutes: int) -> Fare:
+        return replace(
+            fare(
+                40,
+                price,
+                origin_airport="MAD",
+                destination_airport=dest,
+                destination_city=city,
+                outbound_minutes=minutes,
+            ),
+            **week,
+        )
+
+    nyc = trip("JFK", "NYC", "400", 500)
+    yerevan_with_stop = trip("EVN", "EVN", "160", 810)  # 13.5 h with a stop, but only ~3,950 km
+    berlin_with_stop = trip("BER", "BER", "143", 720)  # 12 h via Lanzarote
+    canary = trip("TFN", "TCI", "90", 160)
+    unknown = trip("XXX", "XXX", "300", 600)  # no coordinates: dropped
     short_stay = fare(
         40,
         "350",
@@ -180,6 +175,10 @@ def test_select_long_haul_international_only() -> None:
         outbound_minutes=500,
     )  # 4 nights
     result = select_candidates(
-        [nyc, canary, marrakech, short_stay], long_haul_config(), TODAY, countries
+        [nyc, yerevan_with_stop, berlin_with_stop, canary, unknown, short_stay],
+        long_haul_config(),
+        TODAY,
+        countries,
+        COORDINATES,
     )
     assert [(c.fare.destination_airport, c.fare.nights) for c in result] == [("JFK", 14)]
