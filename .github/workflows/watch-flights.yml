@@ -1,14 +1,23 @@
-# Production: runs the flights watcher on a schedule on GitHub's servers, so alerts
-# arrive with no laptop on. Uses the image published by ci.yml.
+# Production: runs the flights watcher instances on a schedule on GitHub's servers, so
+# alerts arrive with no laptop on. Uses the image published by ci.yml.
 #
 #   schedule           09:00 and 21:00 Madrid time in winter (CET). GitHub schedules are
 #                      UTC only: in summer (CEST) the runs are at 10:00 and 22:00. GitHub
 #                      may start scheduled runs a few minutes late.
-#   workflow_dispatch  run it by hand from the Actions tab (with an optional dry run).
+#   workflow_dispatch  run by hand from the Actions tab: one instance or all, with an
+#                      optional dry run.
+#
+# Instances (config/watchers/<instance>.yaml):
+#   flights-bio  departures from Bilbao (Europe and beyond)
+#   flights-mad  long-haul departures from Madrid
+#   flights-bcn  long-haul departures from Barcelona
+# They run one after another (max-parallel: 1): they post to the same Telegram group,
+# which accepts about 20 messages per minute.
 #
 # Secrets (Settings → Secrets and variables → Actions): TRAVELPAYOUTS_API_TOKEN,
-# TELEGRAM_BOT_TOKEN, TELEGRAM_FLIGHTS_CHAT_ID, TELEGRAM_FLIGHTS_BIO_TOPIC_ID.
-# The SQLite price history is kept between runs in the GitHub Actions cache.
+# TELEGRAM_BOT_TOKEN, TELEGRAM_FLIGHTS_CHAT_ID and one topic ID per instance:
+# TELEGRAM_FLIGHTS_BIO_TOPIC_ID, TELEGRAM_FLIGHTS_MAD_TOPIC_ID, TELEGRAM_FLIGHTS_BCN_TOPIC_ID.
+# Each instance keeps its own SQLite price history in the GitHub Actions cache.
 
 name: Watch flights
 
@@ -17,29 +26,54 @@ on:
     - cron: "0 8,20 * * *"
   workflow_dispatch:
     inputs:
+      instance:
+        description: "Instance to run"
+        type: choice
+        options: [all, flights-bio, flights-mad, flights-bcn]
+        default: all
       dry_run:
         description: "Dry run: print the messages instead of sending them, store nothing"
         type: boolean
         default: true
-
-# One run at a time: they share the price history.
-concurrency:
-  group: watch-flights
-  cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
   IMAGE: ghcr.io/borjaviadero/flights-watcher:latest
-  INSTANCE: flights-bio
-  HISTORY_KEY_PREFIX: flights-bio-history-
 
 jobs:
+  plan:
+    name: Instances to run
+    runs-on: ubuntu-latest
+    outputs:
+      instances: ${{ steps.pick.outputs.instances }}
+    steps:
+      - id: pick
+        env:
+          CHOSEN: ${{ inputs.instance || 'all' }}
+        run: |
+          if [[ "$CHOSEN" == "all" ]]; then
+            echo 'instances=["flights-bio","flights-mad","flights-bcn"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "instances=[\"$CHOSEN\"]" >> "$GITHUB_OUTPUT"
+          fi
+
   run:
-    name: flights-bio
+    name: ${{ matrix.instance }}
+    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      max-parallel: 1 # one instance at a time (shared Telegram group)
+      fail-fast: false # one failing instance must not stop the others
+      matrix:
+        instance: ${{ fromJSON(needs.plan.outputs.instances) }}
+    concurrency:
+      group: watch-${{ matrix.instance }} # never two runs of the same instance at once
+      cancel-in-progress: false
+    env:
+      HISTORY_KEY_PREFIX: ${{ matrix.instance }}-history-
     steps:
       - name: Restore the price history
         uses: actions/cache/restore@v4
@@ -56,18 +90,22 @@ jobs:
 
       - name: Run the watcher
         env:
+          INSTANCE: ${{ matrix.instance }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           TRAVELPAYOUTS_API_TOKEN: ${{ secrets.TRAVELPAYOUTS_API_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_FLIGHTS_CHAT_ID: ${{ secrets.TELEGRAM_FLIGHTS_CHAT_ID }}
           TELEGRAM_FLIGHTS_BIO_TOPIC_ID: ${{ secrets.TELEGRAM_FLIGHTS_BIO_TOPIC_ID }}
+          TELEGRAM_FLIGHTS_MAD_TOPIC_ID: ${{ secrets.TELEGRAM_FLIGHTS_MAD_TOPIC_ID }}
+          TELEGRAM_FLIGHTS_BCN_TOPIC_ID: ${{ secrets.TELEGRAM_FLIGHTS_BCN_TOPIC_ID }}
         run: |
           args=(run --config "config/watchers/${INSTANCE}.yaml")
           if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
           # -e NAME passes the variable from this step's environment without printing it.
           docker run --rm \
-            -e TRAVELPAYOUTS_API_TOKEN -e TELEGRAM_BOT_TOKEN \
-            -e TELEGRAM_FLIGHTS_CHAT_ID -e TELEGRAM_FLIGHTS_BIO_TOPIC_ID \
+            -e TRAVELPAYOUTS_API_TOKEN -e TELEGRAM_BOT_TOKEN -e TELEGRAM_FLIGHTS_CHAT_ID \
+            -e TELEGRAM_FLIGHTS_BIO_TOPIC_ID -e TELEGRAM_FLIGHTS_MAD_TOPIC_ID \
+            -e TELEGRAM_FLIGHTS_BCN_TOPIC_ID \
             -v "$PWD/data:/data" \
             "$IMAGE" "${args[@]}"
 

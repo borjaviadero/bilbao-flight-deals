@@ -6,3 +6,5 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - cronjob-flights-bio.yaml
+  - cronjob-flights-mad.yaml
+  - cronjob-flights-bcn.yaml

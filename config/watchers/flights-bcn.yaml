@@ -1,0 +1,69 @@
+# Flights watcher instance: LONG-HAUL departures from Barcelona (BCN).
+#
+# Why long haul only: from Bilbao, getting to Barcelona costs about 30-60 € per person and
+# half a day each way. On European routes a deal saves less than that (and flights-bio
+# already covers Europe); on long-haul routes a 30 % drop saves hundreds of euros.
+# Barcelona: strong links to North America and Asia.
+
+watcher: flights
+instance: flights-bcn
+enabled: true
+
+schedule: "0 9,21 * * *"       # 09:00 and 21:00, Europe/Madrid (cron)
+
+search:
+  origin: BCN
+  destinations: any
+  trip: round_trip
+  passengers: 2
+  currency: EUR
+  min_flight_hours: 6          # long haul only: outbound flight of more than 6 h
+                               # (the Americas, the Gulf, Asia, sub-Saharan Africa, Oceania)
+  exclude_countries: [ES]      # international only
+  trip_length:
+    - min_nights: 7            # at least a week; at most three
+      max_nights: 21
+  max_stops: 1                 # direct or 1 stop on each leg
+  usual_price_by: route_month  # long-haul prices are seasonal: compare within the same month
+
+# No fixed euro caps: a long-haul round trip never costs 40 € per person, so only the
+# drop against the usual price (same route, same departure month) decides.
+deal_windows:
+  - name: regular
+    label:
+      en: "🌍 Long-haul deal"
+      es: "🌍 Chollo largo radio"
+    min_days_ahead: 30
+    max_days_ahead: 180
+    match: any
+    rules:
+      - type: drop_vs_usual
+        min_drop_percent: 30
+        lookback_days: 30
+        min_observations: 5
+
+  - name: last_minute          # only exceptional prices (including fare errors)
+    label:
+      en: "⚡ Long-haul super deal · last minute"
+      es: "⚡ Superprecio largo radio · última hora"
+    min_days_ahead: 7
+    max_days_ahead: 29
+    match: any
+    rules:
+      - type: drop_vs_usual
+        min_drop_percent: 50
+        lookback_days: 30
+        min_observations: 5
+
+alerts:
+  repeat_only_if_lower: true
+  max_per_run: 20
+  warmup_first_run: true
+  weekly_summary: sunday
+
+telegram:
+  group: flights
+  topic: barcelona
+  chat_id_env: TELEGRAM_FLIGHTS_CHAT_ID
+  topic_id_env: TELEGRAM_FLIGHTS_BCN_TOPIC_ID
+  language: es

@@ -31,7 +31,7 @@ from flights_watcher.messages import alert_message, start_message, summary_messa
 from flights_watcher.models import Candidate
 from flights_watcher.places import airline_names, city_countries, city_names
 from flights_watcher.price_api import TravelpayoutsClient
-from flights_watcher.search import fetch_fares, select_candidates
+from flights_watcher.search import fetch_fares, needs_countries, select_candidates
 
 # Telegram allows about 20 messages per minute in one group: keep well under it.
 SEND_INTERVAL_SECONDS = 3.0
@@ -76,7 +76,7 @@ def run_instance(
     fares = fetch_fares(config, client, today)
     countries = (
         city_countries(http, history, now, store=not dry_run)
-        if http is not None and config.search.direct_only_countries
+        if http is not None and needs_countries(config)
         else {}
     )
     candidates = select_candidates(fares, config, today, countries)
@@ -113,7 +113,7 @@ def run_instance(
         report.in_summary = len(plan.summary)
         return report
 
-    history.record(instance, to_observations(candidates), now)
+    history.record(instance, to_observations(candidates, config.search.usual_price_by), now)
 
     delivered = 0
 
