@@ -5,7 +5,9 @@ Order of operations:
 1. Fetch fares and select candidates.
 2. Warm-up run (first ever, if enabled): no deals evaluated; one start message.
    Otherwise: evaluate candidates against the history *as it was before this run*,
-   then plan alerts (no repeats, ranked, capped per run, rest in a summary).
+   then plan alerts (no repeats, ranked, capped per run, rest in a summary). Super
+   deals (see ``super_deals.py``) are taken out of the city topic and go to the
+   group's General topic instead.
 3. Record this run's prices.
 4. Send the messages; each alert is logged right after it is delivered.
 5. Mark the run as finished.
@@ -37,6 +39,7 @@ from flights_watcher.search import (
     needs_countries,
     select_candidates,
 )
+from flights_watcher.super_deals import SuperDealCheck, check_super_deal
 
 # Telegram allows about 20 messages per minute in one group: keep well under it.
 SEND_INTERVAL_SECONDS = 3.0
@@ -57,7 +60,9 @@ class RunReport:
     alerts_sent: int = 0
     in_summary: int = 0
     skipped_repeats: int = 0
+    super_deals: int = 0
     messages: list[str] = field(default_factory=list)
+    targets: list[str] = field(default_factory=list)  # "topic" or "super", per message
 
 
 def run_instance(
@@ -66,13 +71,18 @@ def run_instance(
     history: PriceHistory,
     send: Sender,
     *,
+    send_super: Sender | None = None,
     now: datetime,
     http: JsonHttpClient | None = None,
     timezone: tzinfo,
     dry_run: bool = False,
     pause: Callable[[float], None] = time.sleep,
 ) -> RunReport:
-    """Execute one run. ``now`` must be timezone-aware."""
+    """Execute one run. ``now`` must be timezone-aware.
+
+    ``send`` posts to the instance's topic; ``send_super`` to where super deals go
+    (the group's General topic); without it super deals use ``send``.
+    """
     instance = config.instance
     language = config.telegram.language
     today = now.astimezone(timezone).date()
@@ -86,7 +96,7 @@ def run_instance(
     )
     coordinates = (
         city_coordinates(http, history, now, store=not dry_run)
-        if http is not None and needs_coordinates(config)
+        if http is not None and (needs_coordinates(config) or config.super_deals is not None)
         else {}
     )
     candidates = select_candidates(fares, config, today, countries, coordinates)
@@ -100,8 +110,9 @@ def run_instance(
     airlines = airline_names(http, history, now, store=not dry_run) if http is not None else {}
 
     plan: AlertPlan[Candidate] = AlertPlan(send=[], summary=[], skipped=[])
+    supers: list[tuple[Opportunity[Candidate], SuperDealCheck]] = []
     if warmup:
-        report.messages.append(start_message(config, candidates, len(candidates), language, names))
+        _add(report, "topic", start_message(config, candidates, len(candidates), language, names))
     else:
         opportunities = find_opportunities(candidates, config, history, now)
         plan = plan_alerts(
@@ -112,14 +123,37 @@ def run_instance(
         )
         report.deals = len(opportunities)
         report.skipped_repeats = len(plan.skipped)
-        report.messages += [alert_message(o, config, language, names, airlines) for o in plan.send]
+        if config.super_deals is not None:  # take super deals out of the city topic
+            checks = {
+                o.item_key: check_super_deal(o, config, history, now, coordinates)
+                for o in [*plan.send, *plan.summary]
+            }
+            supers = [
+                (o, checks[o.item_key])
+                for o in [*plan.send, *plan.summary]
+                if checks[o.item_key].is_super
+            ]
+            plan = AlertPlan(
+                send=[o for o in plan.send if not checks[o.item_key].is_super],
+                summary=[o for o in plan.summary if not checks[o.item_key].is_super],
+                skipped=plan.skipped,
+            )
+        report.super_deals = len(supers)
+        for o, check in supers:
+            _add(report, "super", alert_message(o, config, language, names, airlines, check))
+        for o in plan.send:
+            _add(report, "topic", alert_message(o, config, language, names, airlines))
         if plan.summary:
-            report.messages.append(
-                summary_message(plan.summary, language, names, max_alerts=config.alerts.max_per_run)
+            _add(
+                report,
+                "topic",
+                summary_message(
+                    plan.summary, language, names, max_alerts=config.alerts.max_per_run
+                ),
             )
 
     if dry_run:
-        report.alerts_sent = len(plan.send)
+        report.alerts_sent = len(plan.send) + len(supers)
         report.in_summary = len(plan.summary)
         return report
 
@@ -127,20 +161,22 @@ def run_instance(
 
     delivered = 0
 
-    def deliver(text: str) -> None:
+    def deliver(target: str, text: str) -> None:
         nonlocal delivered
         if delivered:
             pause(SEND_INTERVAL_SECONDS)
-        send(text)
+        sender = (send_super or send) if target == "super" else send
+        sender(text)
         delivered += 1
 
-    alert_messages = report.messages[: len(plan.send)]
-    for opportunity, text in zip(plan.send, alert_messages, strict=True):
-        deliver(text)
+    alerted = [o for o, _ in supers] + plan.send  # one message each, in this order
+    messages = list(zip(report.targets, report.messages, strict=True))
+    for opportunity, (target, text) in zip(alerted, messages[: len(alerted)], strict=True):
+        deliver(target, text)
         _log_alert(history, instance, opportunity, now)
         report.alerts_sent += 1
-    for text in report.messages[len(plan.send) :]:  # summary or start message
-        deliver(text)
+    for target, text in messages[len(alerted) :]:  # summary or start message
+        deliver(target, text)
     for opportunity in plan.summary:  # announced in the summary: do not repeat them
         _log_alert(history, instance, opportunity, now)
     report.in_summary = len(plan.summary)
@@ -155,17 +191,23 @@ def run_instance(
         warmup=warmup,
     )
     logger.info(
-        "run finished: %d fetched, %d candidates, %d deals, %d alerts, %d in summary, "
-        "%d repeats skipped%s",
+        "run finished: %d fetched, %d candidates, %d deals, %d alerts (%d super deals), "
+        "%d in summary, %d repeats skipped%s",
         report.fetched,
         report.candidates,
         report.deals,
         report.alerts_sent,
+        report.super_deals,
         report.in_summary,
         report.skipped_repeats,
         " (warm-up)" if warmup else "",
     )
     return report
+
+
+def _add(report: RunReport, target: str, text: str) -> None:
+    report.targets.append(target)
+    report.messages.append(text)
 
 
 def _log_alert(

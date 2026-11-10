@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
-from dealhunter_core.config import InstanceConfig, StrictModel, load_instance_config
+from dealhunter_core.config import InstanceConfig, Language, StrictModel, load_instance_config
 
 IataCode = str  # three upper-case letters, validated by the field patterns below
 UsualPriceBy = Literal["route", "route_month"]  # how prices are grouped for the usual price
@@ -91,11 +92,46 @@ class FlightSearch(StrictModel):
         return rule is not None and rule.min_nights <= nights <= rule.max_nights
 
 
+class SuperDealRule(StrictModel):
+    """When a deal is a super deal: posted to the group's General topic, not the city topic.
+
+    A deal qualifies through either path:
+      - price:  ``max_price_per_person`` or less; or
+      - drop:   at least ``min_drop_percent`` below the usual price AND a saving of at least
+                ``min_saving_per_person``, with the usual price based on at least
+                ``min_observations`` prices (more than an ordinary deal needs).
+    In both cases the itinerary must be reasonable: each leg with a stop may last at most
+    ``max_detour_factor`` times the estimated direct flight time (from the distance).
+    """
+
+    label: str | dict[Language, str]
+    max_price_per_person: Decimal | None = Field(default=None, gt=0)
+    min_drop_percent: Decimal | None = Field(default=None, gt=0, le=100)
+    min_saving_per_person: Decimal = Field(default=Decimal(0), ge=0)
+    min_observations: int = Field(default=10, ge=1)
+    max_detour_factor: float = Field(default=1.75, ge=1)
+    topic_id_env: str | None = Field(
+        default=None, description="Env var with the topic ID; None posts to the General topic"
+    )
+
+    @model_validator(mode="after")
+    def _check_paths(self) -> Self:
+        if self.max_price_per_person is None and self.min_drop_percent is None:
+            raise ValueError("set max_price_per_person, min_drop_percent or both")
+        return self
+
+    def label_for(self, language: Language) -> str:
+        if isinstance(self.label, str):
+            return self.label
+        return self.label.get(language) or self.label.get("en") or "Super deal"
+
+
 class FlightsInstanceConfig(InstanceConfig):
-    """A flights instance: the shared sections plus ``search``."""
+    """A flights instance: the shared sections plus ``search`` and ``super_deals``."""
 
     watcher: Literal["flights"]
     search: FlightSearch
+    super_deals: SuperDealRule | None = None
 
 
 def load_config(path: Path) -> FlightsInstanceConfig:

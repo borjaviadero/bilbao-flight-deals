@@ -11,7 +11,8 @@ Looks for round-trip flight deals for one instance config (for example [`flights
 | `deals.py` | ✅ | Flights keys for the history (`route_key` = origin-destination airports), observations from candidates, and `find_opportunities` (evaluates each candidate against its window, using the route's usual price). |
 | `messages.py` | ✅ | Telegram texts in English and Spanish (HTML, escaped): deal alert (departure time, flight time and stops per leg; a note that the price is indicative), summary of the rest, warm-up start message. Destinations shown as `Milán (MXP)`, falling back to codes. |
 | `places.py` | ✅ | City and airline names for the messages, and city countries and coordinates for filters (with `distance_km`), from the Travelpayouts `cities.json` and `airlines.json` data files (no token). Each cached 30 days in the history `cache` table; on failure the messages use codes. |
-| `runner.py` | ✅ | One complete run: search → warm-up or evaluate and plan → record prices → send (each alert logged once delivered) → finish. `dry_run` writes and sends nothing. |
+| `super_deals.py` | ✅ | Super deals: price path (`max_price_per_person`) or drop path (`min_drop_percent` and `min_saving_per_person`, usual price from at least `min_observations` prices), both with a reasonable itinerary (each leg with a stop at most `max_detour_factor` × the direct time estimated from the distance). |
+| `runner.py` | ✅ | One complete run: search → warm-up or evaluate and plan → super deals taken out of the city topic → record prices → send (super deals to the General topic, the rest to the instance topic; each alert logged once delivered) → finish. `dry_run` writes and sends nothing. |
 | `cli.py` | ✅ | `search` (read-only table) and `run [--dry-run] [--db PATH]`. |
 | `Dockerfile` | ✅ | Container image: two stages (uv installs the packages; the runtime stage has only the virtual environment, the configs and `tzdata`), non-root user, history in `/data`. |
 

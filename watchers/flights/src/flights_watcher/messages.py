@@ -15,6 +15,7 @@ from dealhunter_core.config import Language
 from dealhunter_core.rules import fmt
 from flights_watcher.config import FlightsInstanceConfig
 from flights_watcher.models import Candidate, Fare
+from flights_watcher.super_deals import SuperDealCheck
 
 WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
@@ -37,6 +38,7 @@ TEXTS: dict[Language, dict[str, str]] = {
         "airline": "airline {name}",
         "per_person": "{price} € per person · {total} € for {n}",
         "drop": "{drop}% below usual ({usual} €)",
+        "saving": "you save {saving} € pp",
         "departs_in": "Departs in {days} days",
         "view": "View flight",
         "indicative": "🔎 Indicative price from recent searches: check it before buying.",
@@ -61,6 +63,7 @@ TEXTS: dict[Language, dict[str, str]] = {
         "airline": "aerolínea {name}",
         "per_person": "{price} € por persona · {total} € para {n}",
         "drop": "{drop}% por debajo de lo habitual ({usual} €)",
+        "saving": "ahorras {saving} €/pers.",
         "departs_in": "Sale dentro de {days} días",
         "view": "Ver vuelo",
         "indicative": (
@@ -142,13 +145,18 @@ def alert_message(
     language: Language,
     names: CityNames | None = None,
     airlines: AirlineNames | None = None,
+    super_deal: SuperDealCheck | None = None,
 ) -> str:
-    """One deal, as a Telegram HTML message."""
+    """One deal, as a Telegram HTML message (a super deal gets its own title and saving)."""
     t = TEXTS[language]
     candidate = opportunity.item
     fare = candidate.fare
     passengers = config.search.passengers
-    label = config.window_named(opportunity.window).label_for(language)
+    is_super = super_deal is not None and super_deal.is_super and config.super_deals is not None
+    if is_super and config.super_deals is not None:
+        label = config.super_deals.label_for(language)
+    else:
+        label = config.window_named(opportunity.window).label_for(language)
 
     nights = t["night"] if fare.nights == 1 else t["nights"].format(n=fare.nights)
     lines = [
@@ -164,13 +172,15 @@ def alert_message(
         ),
     ]
     evaluation = opportunity.evaluation
-    if evaluation.drop_percent is not None and evaluation.drop_percent > 0:
-        lines.append(
-            "📉 "
-            + t["drop"].format(
-                drop=f"{evaluation.drop_percent:.0f}", usual=fmt(evaluation.usual_price)
-            )
-        )
+    usual, drop = evaluation.usual_price, evaluation.drop_percent
+    if is_super and super_deal is not None and super_deal.usual:  # the better-backed median
+        usual = super_deal.usual
+        drop = (usual - fare.price_per_person) / usual * 100
+    if drop is not None and drop > 0 and usual is not None:
+        line = "📉 " + t["drop"].format(drop=f"{drop:.0f}", usual=fmt(usual))
+        if is_super:
+            line += " · " + t["saving"].format(saving=fmt(usual - fare.price_per_person))
+        lines.append(line)
     lines.append("⏳ " + t["departs_in"].format(days=candidate.days_ahead))
     lines.append(t["indicative"])
     lines.append(f'<a href="{escape(fare.link, quote=True)}">{t["view"]}</a>')

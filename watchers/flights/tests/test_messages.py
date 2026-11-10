@@ -163,3 +163,13 @@ def test_flight_time_and_leg() -> None:
 def test_unknown_airline_keeps_the_code() -> None:
     text = alert_message(opportunity(), config(), "es", NAMES, {"V7": "Volotea"})
     assert "🌙 4 noches · aerolínea VY" in text
+
+
+def test_super_deal_message_has_its_title_and_saving() -> None:
+    from flights_watcher.super_deals import SuperDealCheck
+
+    check = SuperDealCheck(True, saving=Decimal("90"), usual=Decimal("120"))
+    text = alert_message(opportunity(drop="70"), config(), "es", NAMES, None, check)
+    lines = text.splitlines()
+    assert lines[0] == "<b>🔥 Superchollo · Bilbao → Milán (MXP)</b>"
+    assert "📉 75% por debajo de lo habitual (120 €) · ahorras 90 €/pers." in lines
