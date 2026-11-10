@@ -22,6 +22,13 @@ It is packaged as a **Docker** image and runs twice a day on a **GitHub Actions*
    | 30 days – 6 months | ≥ 30% below usual **or** ≤ €40 per person | ✈️ Deal |
    | 7 – 29 days | ≥ 50% below usual **or** ≤ €30 per person | ⚡ Super deal · last minute |
 5. **Alerts** on Telegram with the price, the drop and a link — without repeating itself unless the price drops further.
+
+It also watches **long-haul** departures from **Madrid** and **Barcelona**, where the savings justify travelling there from Bilbao:
+
+| Instance | Watches | Trip length | Alert if |
+|---|---|---|---|
+| `flights-bio` | Bilbao, any destination | 2–7 / 3–10 / 6–21 nights by flight time | as above |
+| `flights-mad`, `flights-bcn` | Madrid / Barcelona, outbound flight > 6 h, outside Spain | 7–21 nights | ≥ 30% below usual (≥ 50% in the last-minute window), compared within the same departure month |
 6. **Summarises** the best fares every Sunday (planned).
 
 Example alert:
@@ -47,7 +54,7 @@ The system is split into **watchers** (one per category, e.g. flights, clothes, 
 ```mermaid
 flowchart TD
     subgraph Watchers
-        F["✈️ flights watcher<br/>instance: BIO"]
+        F["✈️ flights watcher<br/>instances: BIO · MAD · BCN"]
         C["👕 clothes watcher<br/>(future)"]
         W["⌚ watches watcher<br/>(future)"]
     end

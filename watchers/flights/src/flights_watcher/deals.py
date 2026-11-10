@@ -8,21 +8,31 @@ from datetime import datetime, timedelta
 from dealhunter_core.alerts import Opportunity
 from dealhunter_core.history import Observation, PriceHistory
 from dealhunter_core.rules import evaluate
-from flights_watcher.config import FlightsInstanceConfig
+from flights_watcher.config import FlightsInstanceConfig, UsualPriceBy
 from flights_watcher.models import Candidate, Fare
 
 
-def route_key(fare: Fare) -> str:
-    """Route used for the usual price: origin and destination airports (any dates)."""
-    return f"{fare.origin_airport}-{fare.destination_airport}"
+def route_key(fare: Fare, by: UsualPriceBy = "route") -> str:
+    """Group used for the usual price.
+
+    ``route``: origin and destination airports, any dates (``BIO-MXP``).
+    ``route_month``: the same per departure month (``MAD-JFK@2027-02``), so a low-season
+    fare is not compared with high-season prices.
+    """
+    key = f"{fare.origin_airport}-{fare.destination_airport}"
+    if by == "route_month":
+        key += f"@{fare.departure_at:%Y-%m}"
+    return key
 
 
-def to_observations(candidates: Iterable[Candidate]) -> list[Observation]:
+def to_observations(
+    candidates: Iterable[Candidate], by: UsualPriceBy = "route"
+) -> list[Observation]:
     """Turn a run's candidates into history rows."""
     return [
         Observation(
             item_key=c.fare.key,
-            route_key=route_key(c.fare),
+            route_key=route_key(c.fare, by),
             price=c.fare.price_per_person,
             currency=c.fare.currency,
         )
@@ -48,7 +58,7 @@ def find_opportunities(
         if (rule := window.drop_rule) is not None:
             usual = history.usual_price(
                 config.instance,
-                route_key(candidate.fare),
+                route_key(candidate.fare, config.search.usual_price_by),
                 since=now - timedelta(days=rule.lookback_days),
                 min_observations=rule.min_observations,
             )

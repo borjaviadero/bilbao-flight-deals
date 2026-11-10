@@ -10,6 +10,7 @@ from pydantic import Field, model_validator
 from dealhunter_core.config import InstanceConfig, StrictModel, load_instance_config
 
 IataCode = str  # three upper-case letters, validated by the field patterns below
+UsualPriceBy = Literal["route", "route_month"]  # how prices are grouped for the usual price
 
 
 class TripLengthRule(StrictModel):
@@ -44,6 +45,22 @@ class FlightSearch(StrictModel):
         default_factory=list, description="Nights allowed by flight time; empty = any length"
     )
     max_stops: int = Field(ge=0, le=2, description="Maximum stops on each leg")
+    min_flight_hours: float | None = Field(
+        default=None,
+        gt=0,
+        description="Only trips whose outbound flight lasts more than this (e.g. 6 = long haul)",
+    )
+    exclude_countries: list[str] = Field(
+        default_factory=list,
+        description="ISO country codes never alerted, e.g. [ES] for international trips only",
+    )
+    usual_price_by: UsualPriceBy = Field(
+        default="route",
+        description=(
+            "Group for the usual price: the route over all dates, or the route per "
+            "departure month (better where prices are seasonal, e.g. long haul)"
+        ),
+    )
     direct_only_countries: list[str] = Field(
         default_factory=list,
         description="ISO country codes where only direct flights (both legs) are wanted",

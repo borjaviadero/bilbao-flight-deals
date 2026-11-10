@@ -27,7 +27,7 @@ from flights_watcher.models import Candidate
 from flights_watcher.places import city_countries
 from flights_watcher.price_api import PriceApiError, TravelpayoutsClient
 from flights_watcher.runner import Sender, run_instance
-from flights_watcher.search import fetch_fares, select_candidates
+from flights_watcher.search import fetch_fares, needs_countries, select_candidates
 
 logger = logging.getLogger("flights_watcher")
 
@@ -100,7 +100,7 @@ def _search(
     today = now.astimezone(TIMEZONE).date()
     fares = fetch_fares(config, client, today)
     countries: dict[str, str] = {}
-    if config.search.direct_only_countries:
+    if needs_countries(config):
         with PriceHistory.in_memory() as scratch:  # read-only command: nothing is kept
             countries = city_countries(http, scratch, now)
     candidates = select_candidates(fares, config, today, countries)

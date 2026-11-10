@@ -10,6 +10,7 @@ kubectl apply -k infra/k8s
 |---|---|
 | `namespace.yaml` | Namespace `dealhunter`, with Pod Security Admission set to **restricted** |
 | `pvc.yaml` | 1 GiB volume for the SQLite history (k3s `local-path` storage) |
+| `cronjob-flights-mad.yaml`, `cronjob-flights-bcn.yaml` | Long-haul instances, at :05 and :10 past the same hours so they do not write the shared SQLite file at once |
 | `cronjob-flights-bio.yaml` | The flights watcher, instance `flights-bio`: **09:00 and 21:00 Europe/Madrid**, never two runs at once, one retry, 15 min limit, non-root, read-only root filesystem, no capabilities, CPU/memory limits |
 | `kustomization.yaml` | The list above |
 | `jobs/dry-run.yaml` | One-off dry run with the same image, secrets and volume (not in the kustomization) |

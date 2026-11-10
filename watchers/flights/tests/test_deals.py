@@ -117,3 +117,30 @@ def test_old_history_is_ignored() -> None:
 def test_unknown_window_name() -> None:
     with pytest.raises(KeyError):
         config().window_named("nope")
+
+
+def test_route_month_key_separates_seasons() -> None:
+    c = candidate("50")
+    assert route_key(c.fare, "route_month") == "BIO-MXP@2026-12"
+    [row] = to_observations([c], "route_month")
+    assert row.route_key == "BIO-MXP@2026-12"
+
+
+def test_usual_price_per_month_ignores_other_months() -> None:
+    cfg = config().model_copy(
+        update={"search": config().search.model_copy(update={"usual_price_by": "route_month"})}
+    )
+    with PriceHistory.in_memory() as h:
+        rows = [
+            Observation(
+                item_key=f"aug-{n}",
+                route_key="BIO-MXP@2026-08",
+                price=Decimal("200"),
+                currency="EUR",
+            )
+            for n in range(5)
+        ]
+        h.record("flights-bio", rows, NOW - timedelta(days=3))
+        # December has no history yet: 50 € is not a 75 % "drop" against August prices,
+        # and it is above the 40 € cap, so it is not a deal.
+        assert find_opportunities([candidate("50")], cfg, h, NOW) == []

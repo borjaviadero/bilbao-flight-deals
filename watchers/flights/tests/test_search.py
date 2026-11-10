@@ -129,3 +129,57 @@ def test_select_drops_stops_to_direct_only_countries() -> None:
         ("ZZZ", 1),
         ("TFN", 0),
     ]
+
+
+def long_haul_config() -> FlightsInstanceConfig:
+    return load_config(REPO_ROOT / "config" / "watchers" / "flights-mad.yaml")
+
+
+def test_select_long_haul_international_only() -> None:
+    countries = {"NYC": "US", "TCI": "ES", "RAK": "MA"}
+    week = {"return_at": datetime(2026, 12, 20, 10, 0)}  # 14 nights from day 40
+    nyc = replace(
+        fare(
+            40,
+            "400",
+            origin_airport="MAD",
+            destination_airport="JFK",
+            destination_city="NYC",
+            outbound_minutes=500,
+        ),
+        **week,
+    )
+    canary = replace(
+        fare(
+            40,
+            "300",
+            origin_airport="MAD",
+            destination_airport="TFN",
+            destination_city="TCI",
+            outbound_minutes=400,
+        ),
+        **week,
+    )  # > 6 h, Spain
+    marrakech = replace(
+        fare(
+            40,
+            "90",
+            origin_airport="MAD",
+            destination_airport="RAK",
+            destination_city="RAK",
+            outbound_minutes=90,
+        ),
+        **week,
+    )  # short haul
+    short_stay = fare(
+        40,
+        "350",
+        origin_airport="MAD",
+        destination_airport="JFK",
+        destination_city="NYC",
+        outbound_minutes=500,
+    )  # 4 nights
+    result = select_candidates(
+        [nyc, canary, marrakech, short_stay], long_haul_config(), TODAY, countries
+    )
+    assert [(c.fare.destination_airport, c.fare.nights) for c in result] == [("JFK", 14)]

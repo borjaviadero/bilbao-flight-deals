@@ -98,3 +98,17 @@ class TestTripLength:
 
 def test_flights_bio_wants_direct_flights_within_spain() -> None:
     assert load_config(CONFIG_DIR / "flights-bio.yaml").search.direct_only_countries == ["ES"]
+
+
+@pytest.mark.parametrize("code", ["mad", "bcn"])
+def test_long_haul_instances(code: str) -> None:
+    origin = code.upper()
+    cfg = load_config(CONFIG_DIR / f"flights-{code}.yaml")
+    s = cfg.search
+    assert (s.origin, s.min_flight_hours, s.exclude_countries) == (origin, 6, ["ES"])
+    assert s.usual_price_by == "route_month"
+    assert not s.nights_allowed(700, 6) and s.nights_allowed(700, 7)
+    assert s.nights_allowed(700, 21) and not s.nights_allowed(700, 22)
+    # no fixed euro caps: only the drop against the usual price
+    assert all(w.drop_rule is not None and len(w.rules) == 1 for w in cfg.deal_windows)
+    assert cfg.telegram.topic_id_env == f"TELEGRAM_FLIGHTS_{origin}_TOPIC_ID"
